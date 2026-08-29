@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhysicsLab — Learn Physics From Zero</title>
+<meta name="description" content="Interactive physics course: Year 11 &amp; 12 plus beginner foundations. Simulations, games, quizzes and an AI tutor.">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚛️</text></svg>">
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Toggle menu">☰</button>
+  <a class="brand" href="#/">⚛️ Physics<span>Lab</span></a>
+  <div class="spacer"></div>
+  <div class="progress-pill" id="globalProgress" title="Overall progress">0%</div>
+  <button class="icon-btn" id="aiBtn" title="AI tutor" aria-label="AI tutor">🧠</button>
+  <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Course navigation">
+    <div class="sidebar-search">
+      <input id="searchBox" type="search" placeholder="Search chapters, formulas…" aria-label="Search">
+    </div>
+    <div id="navTree" class="nav-tree"></div>
+    <div class="sidebar-foot">
+      <a href="#/lab">🔬 Simulation Lab</a>
+      <a href="#/games">🎮 Games</a>
+      <a href="#/formulas">📐 Formula Sheet</a>
+      <a href="#/progress">📊 My Progress</a>
+    </div>
+  </nav>
+
+  <main id="view" class="view" tabindex="-1"></main>
+</div>
+
+<aside class="ai-panel" id="aiPanel" aria-label="AI tutor">
+  <div class="ai-head">
+    <strong>🧠 AI Tutor</strong>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="aiSettingsBtn" title="Settings">⚙️</button>
+    <button class="icon-btn" id="aiCloseBtn" aria-label="Close">✕</button>
+  </div>
+  <div class="ai-settings hidden" id="aiSettings">
+    <label>Anthropic API key <small>(stored only in this browser)</small>
+      <input type="password" id="aiKey" placeholder="sk-ant-…">
+    </label>
+    <label>Model
+      <select id="aiModel">
+        <option value="claude-sonnet-5">claude-sonnet-5 (balanced)</option>
+        <option value="claude-opus-5">claude-opus-5 (deepest)</option>
+        <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (fast)</option>
+      </select>
+    </label>
+    <button class="btn" id="aiSaveBtn">Save</button>
+    <p class="hint">No key? The tutor still works in <b>offline coach mode</b> using the built-in explanations for the current chapter.</p>
+  </div>
+  <div class="ai-chips" id="aiChips"></div>
+  <div class="ai-log" id="aiLog"></div>
+  <form class="ai-input" id="aiForm">
+    <input id="aiText" placeholder="Ask anything about this chapter…" autocomplete="off">
+    <button class="btn" type="submit">Ask</button>
+  </form>
+</aside>
+
+<div class="scrim" id="scrim"></div>
+
+<script src="js/data/physics.js"></script>
+<script src="js/data/quiz.js"></script>
+<script src="js/sims.js"></script>
+<script src="js/games.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

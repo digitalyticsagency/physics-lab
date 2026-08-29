@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PhysicsLab — Learn Physics From Zero</title>
 <meta name="description" content="Interactive physics course: Year 11 &amp; 12 plus beginner foundations. Simulations, games, quizzes and an AI tutor.">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=3">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚛️</text></svg>">
 </head>
 <body>
@@ -35,16 +35,16 @@
 
 <aside class="ai-panel" id="aiPanel" aria-label="AI tutor">
   <div class="ai-head">
-    <strong>🧠 AI Tutor</strong>
+    <strong id="aiTitle">🧠 AI Tutor</strong>
     <div class="spacer"></div>
     <button class="icon-btn" id="aiSettingsBtn" title="Settings">⚙️</button>
     <button class="icon-btn" id="aiCloseBtn" aria-label="Close">✕</button>
   </div>
   <div class="ai-settings hidden" id="aiSettings">
-    <label>Anthropic API key <small>(stored only in this browser)</small>
+    <label id="aiKeyLabel">Anthropic API key <small>(stored only in this browser)</small>
       <input type="password" id="aiKey" placeholder="sk-ant-…">
     </label>
-    <label>Model
+    <label id="aiModelLabel">Model
       <select id="aiModel">
         <option value="claude-sonnet-5">claude-sonnet-5 (balanced)</option>
         <option value="claude-opus-5">claude-opus-5 (deepest)</option>
@@ -52,7 +52,7 @@
       </select>
     </label>
     <button class="btn" id="aiSaveBtn">Save</button>
-    <p class="hint">No key? The tutor still works in <b>offline coach mode</b> using the built-in explanations for the current chapter.</p>
+    <p class="hint" id="aiHint">No key? The tutor still works in <b>offline coach mode</b> using the built-in explanations for the current chapter.</p>
   </div>
   <div class="ai-chips" id="aiChips"></div>
   <div class="ai-log" id="aiLog"></div>
@@ -64,15 +64,17 @@
 
 <div class="scrim" id="scrim"></div>
 
-<script src="js/data/physics.js"></script>
-<script src="js/data/i18n.js"></script>
-<script src="js/data/simple.js"></script>
-<script src="js/graphics.js"></script>
-<script src="js/data/quiz.js"></script>
-<script src="js/sims.js"></script>
-<script src="js/games.js"></script>
-<script src="js/memory.js"></script>
-<script src="js/ai.js"></script>
-<script src="js/app.js"></script>
+<script src="js/data/physics.js?v=3"></script>
+<script src="js/data/i18n.js?v=3"></script>
+<script src="js/data/simple.js?v=3"></script>
+<script src="js/data/bn-content.js?v=3"></script>
+<script src="js/data/bn-quiz.js?v=3"></script>
+<script src="js/graphics.js?v=3"></script>
+<script src="js/data/quiz.js?v=3"></script>
+<script src="js/sims.js?v=3"></script>
+<script src="js/games.js?v=3"></script>
+<script src="js/memory.js?v=3"></script>
+<script src="js/ai.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>

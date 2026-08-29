@@ -1,8 +1,17 @@
 /* Inline animated SVG art. Self-contained (SMIL + CSS vars), so nothing depends on
    an external image host, nothing breaks offline, and every drawing follows the theme. */
 const ART = {};
-const svg = (id, inner, vb='0 0 400 200') =>
-  ART[id] = `<svg class="art" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" role="img">${inner}</svg>`;
+const CAP = {"every measurement = number + unit": "পরিমাপ = সংখ্যা + একক", "3 steps east": "৩ পা পূর্বে", "4 north": "৪ পা উত্তরে", "= 5 diagonal": "= ৫ পা কোনাকুনি", "slow": "ধীর", "twice as fast": "দ্বিগুণ দ্রুত", "time →": "সময় →", "steeper line = faster": "বেশি খাড়া = বেশি দ্রুত", "forward at steady speed · falling all the while": "সামনে সমবেগে · সাথে সাথে পড়ছেও", "push": "ধাক্কা", "friction": "ঘর্ষণ", "equal arrows = no change in motion": "সমান তীর = গতির পরিবর্তন নেই", "steeper slope wins over grip → it slides": "ঢাল গ্রিপকে হারালে পিছলে যায়", "something must pull it inward, always": "কাউকে সবসময় ভিতরের দিকে টানতেই হবে", "falling forever, missing the ground": "অনন্তকাল পড়ছে, অথচ মাটি ফসকে যাচ্ছে", "stored high up": "উঁচুতে জমানো", "spent as speed low down": "নিচে গতি হয়ে খরচ", "the push each one feels is equal and opposite": "দুজনের ধাক্কা সমান ও বিপরীত", "pulled back harder the further it goes": "যত দূরে যায় তত জোরে ফেরে", "the dot only bobs — the shape travels": "বিন্দু শুধু ওঠানামা করে — আকৃতি চলে", "green points never move — that is a node": "সবুজ বিন্দু কখনো নড়ে না — ওটাই নিস্পন্দ", "waves squash in front, stretch behind": "সামনে তরঙ্গ চাপে, পেছনে টান খায়", "glass bends light to one point": "কাচ আলোকে এক বিন্দুতে বাঁকায়", "focus": "ফোকাস", "hotter = faster bouncing = more pressure": "গরম = দ্রুত ধাক্কা = বেশি চাপ", "opposite charges pull together": "বিপরীত আধান কাছে টানে", "charge goes round and round; energy is dropped off": "আধান ঘুরতেই থাকে; শক্তি পথে বিলিয়ে যায়", "move the magnet →電 electricity appears": "চুম্বক নাড়ান → বিদ্যুৎ আসে", "one packet of light knocks out one electron": "আলোর এক প্যাকেট একটি ইলেকট্রন ছিটকে দেয়", "electrons sit on fixed steps, never between": "ইলেকট্রন নির্দিষ্ট ধাপে বসে, মাঝখানে নয়", "each one pops at random — half gone every half-life": "প্রতিটি এলোমেলোভাবে ফাটে — প্রতি অর্ধায়ুতে অর্ধেক শেষ", "your clock": "আপনার ঘড়ি", "a fast traveller's clock": "দ্রুতগামীর ঘড়ি", "hot": "গরম", "cold": "ঠান্ডা", "energy always flows this way, never back": "শক্তি সবসময় এদিকেই যায়, ফেরে না", "push the piston in": "পিস্টন ভিতরে ঠেলুন", "→ the gas heats up": "→ গ্যাস গরম হয়", "electric and magnetic, taking turns, at light speed": "তড়িৎ ও চৌম্বক, পালা করে, আলোর বেগে", "a bucket for charge — fills slowly, empties in a flash": "আধানের বালতি — ভরে ধীরে, খালি হয় ঝলকে", "seven building blocks — everything else is made of these": "সাতটি ভিত্তি — বাকি সব এদেরই দিয়ে গড়া", "falling · flying · circling — same three rules everywhere": "পড়া · ওড়া · ঘোরা — সর্বত্র একই তিন নিয়ম", "recall today, in 3 days, in a week — memory gets stronger each time": "আজ, ৩ দিনে, এক সপ্তাহে মনে করুন — প্রতিবারেই স্মৃতি শক্ত হয়", "longitudinal: compressions and rarefactions": "অনুদৈর্ঘ্য: সংনমন ও প্রসারণ", "metal": "ধাতু"};
+const cap = en => (typeof isBn==='function' && isBn() && CAP[en]) ? CAP[en] : en;
+const ART_SRC = {};
+const svg = (id, inner, vb='0 0 400 200') => {
+  ART_SRC[id] = {inner, vb};
+  Object.defineProperty(ART, id, {
+    get(){ const {inner, vb} = ART_SRC[id];
+      const localised = inner.replace(/>([^<>]+)</g, (m, txt) => '>' + cap(txt.trim()) + '<');
+      return `<svg class="art" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" role="img">${localised}</svg>`; },
+    enumerable:true, configurable:true });
+};
 
 const GROUND = `<rect x="0" y="170" width="400" height="30" fill="var(--line)"/>`;
 const SKY = `<rect width="400" height="200" fill="var(--panel-2)"/>`;

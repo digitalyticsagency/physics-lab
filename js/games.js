@@ -6,14 +6,14 @@ const GAMES = [
     el.innerHTML = `<div class="card">
       <canvas class="sim" id="tgCanvas" width="800" height="400"></canvas>
       <div class="row" style="margin-top:.7rem">
-        <label>Angle <b id="tgA">45</b>°<input type="range" id="tgAng" min="5" max="85" value="45"></label>
-        <label>Speed <b id="tgV">40</b> m/s<input type="range" id="tgVel" min="10" max="90" value="40"></label>
-        <button class="btn" id="tgFire">Fire</button>
-        <button class="btn ghost" id="tgNew">New target</button>
-        <span class="tag">Score <b id="tgScore">0</b></span>
-        <span class="tag">Round <b id="tgRound">1</b></span>
+        <label>${isBn()?'কোণ':'Angle'} <b id="tgA">45</b>°<input type="range" id="tgAng" min="5" max="85" value="45"></label>
+        <label>${isBn()?'বেগ':'Speed'} <b id="tgV">40</b> m/s<input type="range" id="tgVel" min="10" max="90" value="40"></label>
+        <button class="btn" id="tgFire">${isBn()?'ছুঁড়ুন':'Fire'}</button>
+        <button class="btn ghost" id="tgNew">${isBn()?'নতুন লক্ষ্য':'New target'}</button>
+        <span class="tag">${isBn()?'স্কোর':'Score'} <b id="tgScore">0</b></span>
+        <span class="tag">${isBn()?'রাউন্ড':'Round'} <b id="tgRound">1</b></span>
       </div>
-      <p class="hint" id="tgMsg">Range on level ground is R = u²sin(2θ)/g. Work it out, then fire.</p></div>`;
+      <p class="hint" id="tgMsg">${isBn()?'সমতল ভূমিতে পাল্লা R = u²sin(2θ)/g। হিসাব করে তারপর ছুঁড়ুন।':'Range on level ground is R = u²sin(2θ)/g. Work it out, then fire.'}</p></div>`;
     const cv=el.querySelector('#tgCanvas'), ctx=cv.getContext('2d');
     let target=200, wind=0, score=0, round=1, shot=null, anim=null;
     const ang=el.querySelector('#tgAng'), vel=el.querySelector('#tgVel');
@@ -24,7 +24,7 @@ const GAMES = [
       ctx.fillStyle=getCSS('--line'); ctx.fillRect(0,350,800,50);
       ctx.fillStyle=getCSS('--warn'); ctx.fillRect(60+target-14,336,28,14);
       ctx.fillStyle=getCSS('--muted'); ctx.font='13px ui-monospace,monospace';
-      ctx.fillText(`target ${target.toFixed(0)} m   wind ${wind>0?'+':''}${wind.toFixed(1)} m/s`,12,24);
+      ctx.fillText((isBn()?`লক্ষ্য ${target.toFixed(0)} মি   বাতাস `:`target ${target.toFixed(0)} m   wind `)+`${wind>0?'+':''}${wind.toFixed(1)} m/s`,12,24);
       ctx.fillStyle=getCSS('--accent'); ctx.beginPath(); ctx.arc(60,350,10,0,7); ctx.fill();
       if(shot){ ctx.strokeStyle=getCSS('--accent'); ctx.lineWidth=2; ctx.beginPath();
         shot.forEach((p,i)=> i?ctx.lineTo(60+p[0],350-p[1]):ctx.moveTo(60+p[0],350-p[1])); ctx.stroke(); }
@@ -35,8 +35,14 @@ const GAMES = [
       while(y>=0 && t<30){ vx+=wind*0.02; vy-=g*0.02; x+=vx*0.02; y+=vy*0.02; t+=0.02; shot.push([x,y]); }
       const err=Math.abs(x-target);
       const msg=el.querySelector('#tgMsg');
-      if(err<12){ score+=Math.max(10,60-Math.round(err*3)); msg.textContent=`HIT! Off by ${err.toFixed(1)} m. +${Math.max(10,60-Math.round(err*3))} points.`; round++; setTimeout(newTarget,900); }
-      else msg.textContent = `Landed at ${x.toFixed(0)} m — ${x<target?'short':'long'} by ${err.toFixed(0)} m. Predicted range u²sin2θ/g = ${(u*u*Math.sin(2*th)/9.81).toFixed(0)} m (wind shifts it).`;
+      const pts=Math.max(10,60-Math.round(err*3));
+      if(err<12){ score+=pts;
+        msg.textContent = isBn()? `লেগেছে! পার্থক্য ${err.toFixed(1)} মিটার। +${pts} পয়েন্ট।`
+                                : `HIT! Off by ${err.toFixed(1)} m. +${pts} points.`;
+        round++; setTimeout(newTarget,900); }
+      else msg.textContent = isBn()
+        ? `পড়ল ${x.toFixed(0)} মিটারে — ${x<target?'কম':'বেশি'} হয়েছে ${err.toFixed(0)} মিটার। হিসাবি পাল্লা u²sin2θ/g = ${(u*u*Math.sin(2*th)/9.81).toFixed(0)} মিটার (বাতাস একে সরিয়ে দেয়)।`
+        : `Landed at ${x.toFixed(0)} m — ${x<target?'short':'long'} by ${err.toFixed(0)} m. Predicted range u²sin2θ/g = ${(u*u*Math.sin(2*th)/9.81).toFixed(0)} m (wind shifts it).`;
       el.querySelector('#tgScore').textContent=score;
       el.querySelector('#tgRound').textContent=round;
       draw();
@@ -58,9 +64,9 @@ const GAMES = [
       ['de Broglie wavelength','h/p'],['Half-life','ln2/λ'],['Lorentz factor','1/√(1−v²/c²)'],
       ['Transformer ratio','Ns/Np']];
     let score=0, time=60, q=null, timer=null;
-    el.innerHTML=`<div class="card"><div class="row"><span class="tag">Score <b id="fScore">0</b></span>
-      <span class="tag">Time <b id="fTime">60</b> s</span><button class="btn" id="fStart">Start</button></div>
-      <h3 id="fQ" style="margin-top:1rem">Press start</h3><div class="opts" id="fOpts"></div>
+    el.innerHTML=`<div class="card"><div class="row"><span class="tag">${isBn()?'স্কোর':'Score'} <b id="fScore">0</b></span>
+      <span class="tag">${isBn()?'সময়':'Time'} <b id="fTime">60</b> s</span><button class="btn" id="fStart">${isBn()?'শুরু':'Start'}</button></div>
+      <h3 id="fQ" style="margin-top:1rem">${isBn()?'শুরু চাপুন':'Press start'}</h3><div class="opts" id="fOpts"></div>
       <p class="hint" id="fMsg"></p></div>`;
     function next(){
       const i=Math.floor(Math.random()*pairs.length); q=pairs[i];
@@ -70,7 +76,7 @@ const GAMES = [
       el.querySelector('#fQ').textContent=q[0];
       const box=el.querySelector('#fOpts'); box.innerHTML='';
       opts.forEach(o=>{ const b=document.createElement('button'); b.className='opt'; b.textContent=o;
-        b.onclick=()=>{ if(o===q[1]){ score+=10; el.querySelector('#fMsg').textContent='✅ correct'; }
+        b.onclick=()=>{ if(o===q[1]){ score+=10; el.querySelector('#fMsg').textContent=isBn()?'✅ সঠিক':'✅ correct'; }
           else { score=Math.max(0,score-5); el.querySelector('#fMsg').textContent=`❌ ${q[0]} = ${q[1]}`; }
           el.querySelector('#fScore').textContent=score; next(); };
         box.appendChild(b); });
@@ -79,7 +85,7 @@ const GAMES = [
       score=0; time=60; el.querySelector('#fScore').textContent=0; next();
       clearInterval(timer);
       timer=setInterval(()=>{ time--; el.querySelector('#fTime').textContent=time;
-        if(time<=0){ clearInterval(timer); el.querySelector('#fQ').textContent=`Time! Final score ${score}`;
+        if(time<=0){ clearInterval(timer); el.querySelector('#fQ').textContent=isBn()?`সময় শেষ! মোট স্কোর ${score}`:`Time! Final score ${score}`;
           el.querySelector('#fOpts').innerHTML=''; } },1000);
     };
   }},
@@ -105,7 +111,7 @@ const GAMES = [
     let i=0, score=0;
     el.innerHTML=`<div class="card"><canvas id="gdC" class="sim" width="400" height="260" style="max-width:420px"></canvas>
       <h3 id="gdQ"></h3><div class="opts" id="gdO"></div>
-      <p class="hint" id="gdM"></p><div class="row"><span class="tag">Score <b id="gdS">0</b></span></div></div>`;
+      <p class="hint" id="gdM"></p><div class="row"><span class="tag">${isBn()?'স্কোর':'Score'} <b id="gdS">0</b></span></div></div>`;
     const cv=el.querySelector('#gdC'), ctx=cv.getContext('2d');
     function show(){
       const c=cases[i%cases.length];
@@ -115,11 +121,11 @@ const GAMES = [
       ctx.strokeStyle=getCSS('--accent'); ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(40,220); c.draw(ctx); ctx.stroke();
       ctx.fillStyle=getCSS('--muted'); ctx.font='12px ui-monospace,monospace';
       ctx.fillText(c.q.split('–')[0],6,16); ctx.fillText('time',350,248);
-      el.querySelector('#gdQ').textContent=`${c.q} graph — what is happening?`;
+      el.querySelector('#gdQ').textContent = isBn()? `${c.q} লেখচিত্র — কী ঘটছে?` : `${c.q} graph — what is happening?`;
       const box=el.querySelector('#gdO'); box.innerHTML='';
       c.opts.forEach(o=>{ const b=document.createElement('button'); b.className='opt'; b.textContent=o;
-        b.onclick=()=>{ if(o===c.a){ score+=10; el.querySelector('#gdM').textContent='✅ correct'; }
-          else el.querySelector('#gdM').textContent=`❌ answer: ${c.a}`;
+        b.onclick=()=>{ if(o===c.a){ score+=10; el.querySelector('#gdM').textContent=isBn()?'✅ সঠিক':'✅ correct'; }
+          else el.querySelector('#gdM').textContent=isBn()?`❌ উত্তর: ${c.a}`:`❌ answer: ${c.a}`;
           el.querySelector('#gdS').textContent=score; i++; show(); };
         box.appendChild(b); });
     }

@@ -13,18 +13,20 @@ const SRS = {
     ALL_CHAPTERS.forEach(c => {
       if(!(prog[c.id] && prog[c.id].read)) return;
       (c.formulas||[]).forEach((f,i) => {
-        out.push({id:`f:${c.id}:${i}`, type:'formula', ch:c, front:f.d, back:f.f});
+        out.push({id:`f:${c.id}:${i}`, type:'formula', ch:c, front:chFormulaDesc(c,i), back:f.f});
         const cl = SRS.cloze(f.f);
-        if(cl) out.push({id:`z:${c.id}:${i}`, type:'cloze', ch:c, front:cl.masked, back:cl.answer, hint:f.d, opts:cl.opts});
+        if(cl) out.push({id:`z:${c.id}:${i}`, type:'cloze', ch:c, front:cl.masked, back:cl.answer, hint:chFormulaDesc(c,i), opts:cl.opts});
       });
       (c.terms||[]).slice(0,3).forEach((tm,i) => {
-        out.push({id:`t:${c.id}:${i}`, type:'term', ch:c, front:`In "${c.title}", what does “${tm}” mean?`, back:null});
+        const q = isBn() ? `"${tr(c,'title')}" অধ্যায়ে “${tm}” বলতে কী বোঝায়?`
+                         : `In "${c.title}", what does “${tm}” mean?`;
+        out.push({id:`t:${c.id}:${i}`, type:'term', ch:c, front:q, back:null});
       });
     });
     // questions previously answered wrong always come back
     const wrong = JSON.parse(localStorage.getItem('pl_wrong')||'[]');
     wrong.forEach(w => {
-      const c = ALL_CHAPTERS.find(x=>x.id===w.ch); const q = (QUIZ[w.ch]||[])[w.i];
+      const c = ALL_CHAPTERS.find(x=>x.id===w.ch); const q = (quizFor(w.ch)||[])[w.i];
       if(c && q) out.push({id:`q:${w.ch}:${w.i}`, type:'quiz', ch:c, front:q.q, back:q.o[q.a], why:q.e});
     });
     return out;
@@ -113,8 +115,8 @@ function renderReview(host){
   }
   function done(){
     body.innerHTML = `<div class="card"><b>✅ ${t('noDue')}</b>
-      <p class="lede">Cards come back on a widening schedule — 1 day, 3 days, then longer each time you get them right. Anything you miss comes back tomorrow.</p>
-      <a class="btn" href="#/">Back to the course</a></div>`;
+      <p class="lede">${t('reviewDoneNote')}</p>
+      <a class="btn" href="#/">${t('backToCourse')}</a></div>`;
     header();
   }
   function next(){
@@ -143,13 +145,13 @@ function renderReview(host){
       box.appendChild(opts);
     } else {
       box.appendChild(el('h3',null, card.front));
-      if(card.type==='formula') box.appendChild(el('p','hint','Recall the equation before you reveal it.'));
+      if(card.type==='formula') box.appendChild(el('p','hint', t('recallFirst')));
       const showBtn = el('button','btn', t('showAnswer'));
       const ans = el('div','hidden');
       if(card.back) ans.appendChild(el('div','formula', card.back));
       if(card.why) ans.appendChild(el('div','explain', card.why));
       if(card.type==='term') ans.appendChild(el('div','explain',
-        `Open the chapter to check yourself: <a href="#/c/${card.ch.id}">${tr(card.ch,'title')}</a>. Grade honestly — that judgement is part of the learning.`));
+        `${t('openChapter')}: <a href="#/c/${card.ch.id}">${tr(card.ch,'title')}</a>. ${t('gradeHonestly')}`));
       const grades = el('div','row hidden');
       [[t('again'),0],[t('hard'),3],[t('good'),4],[t('easy'),5]].forEach(([lab,q])=>{
         const b = el('button','btn small'+(q===0?'':' ghost'), lab);
@@ -166,8 +168,7 @@ function renderReview(host){
 }
 
 /* ---------- stepped worked example (predict, then reveal) ---------- */
-function steppedExample(ch, host){
-  const ex = ch.example;
+function steppedExample(ex, host){
   const card = el('div','card');
   card.appendChild(el('p',null, `<b>${t('problem')}.</b> ${ex.problem}`));
   card.appendChild(el('p','hint', t('predictFirst')));

@@ -30,6 +30,15 @@ const UI = {
     beginner:'Beginner foundation', y11:'Year 11', y12:'Year 12',
     clozeTitle:'Fill the gap', clozePrompt:'Which symbol belongs in the blank?',
     correct:'correct', wrong:'not quite',
+    aiTitle:'🧠 AI Tutor', aiKeyLabel:'Anthropic API key', aiKeySmall:'(stored only in this browser)',
+    aiModelLabel:'Model', aiSave:'Save', aiPlaceholder:'Ask anything about this chapter…',
+    aiHint:'No key? The tutor still works in offline coach mode using the built-in explanations for the current chapter.',
+    aiGreeting:'Hi. Ask me anything about the chapter you are on. I work with no setup at all — add your own Anthropic API key in ⚙️ for full conversational tutoring.',
+    resetAll:'Reset all progress', resetConfirm:'Erase all progress, notes and flashcard scheduling on this device?',
+    recallFirst:'Recall the equation before you reveal it.',
+    openChapter:'Open the chapter to check yourself', gradeHonestly:'Grade yourself honestly — that judgement is part of the learning.',
+    reviewDoneNote:'Cards come back on a widening schedule — 1 day, 3 days, then longer each time you get them right. Anything you miss comes back tomorrow.',
+    backToCourse:'Back to the course', theory:'Read the theory',
     bnNote:'Bangla mode translates the interface, chapter titles, summaries and the key-idea box. The detailed explanations, worked examples and quizzes stay in English so the exam vocabulary stays familiar.'
   },
   bn:{
@@ -60,6 +69,15 @@ const UI = {
     beginner:'প্রাথমিক ভিত্তি', y11:'একাদশ শ্রেণি', y12:'দ্বাদশ শ্রেণি',
     clozeTitle:'শূন্যস্থান পূরণ', clozePrompt:'ফাঁকা জায়গায় কোন রাশিটি বসবে?',
     correct:'সঠিক', wrong:'হলো না',
+    aiTitle:'🧠 এআই টিউটর', aiKeyLabel:'Anthropic API কী', aiKeySmall:'(শুধু এই ব্রাউজারে রাখা হয়)',
+    aiModelLabel:'মডেল', aiSave:'সংরক্ষণ', aiPlaceholder:'এই অধ্যায় নিয়ে যা খুশি জিজ্ঞাসা করুন…',
+    aiHint:'কী নেই? টিউটর তবুও অফলাইন কোচ মোডে চলবে, বর্তমান অধ্যায়ের নিজস্ব ব্যাখ্যা ব্যবহার করে।',
+    aiGreeting:'হ্যালো। যে অধ্যায়ে আছেন তা নিয়ে যা খুশি জিজ্ঞাসা করুন। কোনো সেটআপ ছাড়াই কাজ করি — পূর্ণ কথোপকথনের জন্য ⚙️-তে নিজের Anthropic API কী যোগ করুন।',
+    resetAll:'সব অগ্রগতি মুছুন', resetConfirm:'এই ডিভাইস থেকে সব অগ্রগতি, নোট আর ফ্ল্যাশকার্ডের সময়সূচি মুছে ফেলবেন?',
+    recallFirst:'উত্তর দেখার আগে সমীকরণটি মনে করার চেষ্টা করুন।',
+    openChapter:'নিজে মিলিয়ে নিতে অধ্যায়টি খুলুন', gradeHonestly:'সৎভাবে নিজেকে নম্বর দিন — এই বিচারটাই শেখার অংশ।',
+    reviewDoneNote:'কার্ডগুলো ক্রমশ বাড়তে থাকা ব্যবধানে ফিরে আসে — ১ দিন, ৩ দিন, তারপর আরও পরে। যেটি ভুল হবে, সেটি কাল আবার আসবে।',
+    backToCourse:'কোর্সে ফিরুন', theory:'তত্ত্ব পড়ুন',
     bnNote:'বাংলা মোডে ইন্টারফেস, অধ্যায়ের নাম, সারসংক্ষেপ ও "মূল কথা" অংশ বাংলায় দেখানো হয়। বিস্তারিত ব্যাখ্যা, উদাহরণ ও কুইজ ইংরেজিতেই থাকে, যাতে পরীক্ষার পরিভাষা পরিচিত থাকে।'
   }
 };
@@ -158,3 +176,29 @@ SUBJECTS.forEach(s => s.units.forEach(u => {
     if(bc){ c.bn_title = bc[0]; c.bn_summary = bc[1]; c.bn_keyIdea = bc[2]; }
   });
 }));
+
+
+/* ---- content helpers: fall back to English whenever a Bangla string is missing ---- */
+const isBn = () => LANG.get()==='bn';
+const bnCh = id => (isBn() && typeof BN!=='undefined') ? BN[id] : null;
+function chSectionHead(ch,i){ const b=bnCh(ch.id); return (b&&b.sh&&b.sh[i]) || ch.sections[i].h; }
+function chFormulaDesc(ch,i){ const b=bnCh(ch.id); return (b&&b.f&&b.f[i]) || ch.formulas[i].d; }
+function chExample(ch){ const b=bnCh(ch.id);
+  if(b&&b.ex) return {title:ch.example.title, problem:b.ex.p, steps:b.ex.s};
+  return ch.example; }
+function chRealWorld(ch){ const b=bnCh(ch.id); return (b&&b.rw) || ch.realWorld; }
+function chVideoLabel(ch,i){ const b=bnCh(ch.id); return (b&&b.vid&&b.vid[i]) || ch.videos[i].t; }
+function chSimple(ch){ const b=bnCh(ch.id);
+  if(b&&b.s) return {art:ch.simple&&ch.simple.art, what:b.s.w, analogy:b.s.a, remember:b.s.r, tryThis:b.s.t};
+  return ch.simple; }
+function simMeta(id){ const s=SIMS[id]; if(!s) return null;
+  const b = (isBn() && typeof BN_SIM!=='undefined') ? BN_SIM[id] : null;
+  return {title:(b&&b.title)||s.title, desc:(b&&b.desc)||s.desc, p:(b&&b.p)||{}}; }
+function gameMeta(g){ const b=(isBn() && typeof BN_GAME!=='undefined') ? BN_GAME[g.id] : null;
+  return {title:(b&&b.title)||g.title, blurb:(b&&b.blurb)||g.blurb}; }
+function quizFor(chId){
+  const en = QUIZ[chId]||[];
+  const bn = (isBn() && typeof BN_QUIZ!=='undefined') ? BN_QUIZ[chId] : null;
+  if(!bn) return en;
+  return en.map((q,i)=> bn[i] ? {q:bn[i].q, o:bn[i].o, a:q.a, e:bn[i].e} : q);
+}

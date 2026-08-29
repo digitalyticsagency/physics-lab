@@ -72,6 +72,7 @@ function renderNav(filter=''){
 /* ---------- simulation mounting ---------- */
 function mountSim(container, simId){
   const sim = SIMS[simId]; if(!sim) return;
+  const meta = simMeta(simId);
   const gen = ++simGen;
   const params = {}; (sim.params||[]).forEach(p=>params[p.k]=p.def);
   const wrap = el('div','sim-wrap');
@@ -88,7 +89,7 @@ function mountSim(container, simId){
 
   (sim.params||[]).forEach(p=>{
     const d = el('div','ctl');
-    d.innerHTML = `<label>${p.label} <span class="valbox" id="v_${p.k}">${p.def}${p.unit?' '+p.unit:''}</span></label>`;
+    d.innerHTML = `<label>${(meta.p&&meta.p[p.k])||p.label} <span class="valbox" id="v_${p.k}">${p.def}${p.unit?' '+p.unit:''}</span></label>`;
     const inp = el('input'); inp.type='range'; inp.min=p.min; inp.max=p.max; inp.step=p.step; inp.value=p.def;
     inp.oninput = () => {
       params[p.k] = +inp.value;
@@ -127,7 +128,7 @@ function mountSim(container, simId){
 
 /* ---------- quiz ---------- */
 function mountQuiz(container, chId){
-  const qs = QUIZ[chId]; if(!qs) return;
+  const qs = quizFor(chId); if(!qs || !qs.length) return;
   let correct = 0, answered = 0;
   const head = el('div','row');
   head.innerHTML = `<span class="tag">${qs.length} ${t('quizQuestions')}</span><span class="tag" id="qScore">0 / ${qs.length}</span>`;
@@ -223,7 +224,7 @@ function viewChapter(id){
   const prev = ALL_CHAPTERS[idx-1], next = ALL_CHAPTERS[idx+1];
   const levelTag = {foundation:t('beginner'), y11:t('y11'), y12:t('y12')}[ch.level]||ch.level;
   const read = (store.get()[ch.id]||{}).read;
-  const S = ch.simple;
+  const S = chSimple(ch);
   const simpleMode = MODE.get()==='simple';
   const bn = LANG.get()==='bn';
   const v = $('#view');
@@ -239,14 +240,14 @@ function viewChapter(id){
     </div>` : '';
 
   const detail = `
-    ${ch.sections.map(s=>`<h2>${s.h}</h2><div>${s.body}</div>`).join('')}
+    ${ch.sections.map((sec,i)=>`<h2>${chSectionHead(ch,i)}</h2><div>${sec.body}</div>`).join('')}
     ${ch.formulas.length?`<h2>${t('formulasToKnow')}</h2>
       <p class="hint">${bn?'এখনই মুখস্থ করার দরকার নেই। প্রতিটি সূত্রের নিচে সাধারণ ভাষায় মানে লেখা আছে।'
         :'You do not need to memorise these yet. Read each one as the sentence written beside it — the flashcards will do the memorising later.'}</p>
-      ${ch.formulas.map(f=>`<div class="formula"><b>${f.f}</b>   —   ${f.d}</div>`).join('')}`:''}
+      ${ch.formulas.map((f,i)=>`<div class="formula"><b>${f.f}</b>   —   ${chFormulaDesc(ch,i)}</div>`).join('')}`:''}
     ${ch.example?`<h2>${t('workedExample')} — ${ch.example.title}</h2><div id="exHost"></div>`:''}
     <h2>${t('realWorld')}</h2>
-    <ul class="clean">${ch.realWorld.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+    <ul class="clean">${chRealWorld(ch).map(r=>`<li>${r}</li>`).join('')}</ul>`;
 
   v.innerHTML = `
     <div class="crumb">${ch._unit.icon} ${tr(ch._unit,'title')}</div>
@@ -259,13 +260,13 @@ function viewChapter(id){
       <button class="btn ghost" id="detailBtn">${simpleMode ? (bn?'📖 পুরো ব্যাখ্যা দেখান':'📖 Show the full explanation') : (bn?'🌱 সহজ ভাষায় দেখান':'🌱 Keep it simple')}</button>
       <span class="hint">${bn?'সহজ মোড ডিফল্ট। প্রস্তুত হলে বিস্তারিত খুলুন।':'Simple mode is on by default. Open the detail when you feel ready.'}</span></div>` : ''}
     <div id="detailHost" class="${S && simpleMode ? 'hidden':''}">${detail}</div>
-    ${ch.sim?`<h2>${t('tryIt')} — ${SIMS[ch.sim]?SIMS[ch.sim].title:''}</h2>
-      <p class="lede">${SIMS[ch.sim]?SIMS[ch.sim].desc:''}</p>
+    ${ch.sim?`<h2>${t('tryIt')} — ${simMeta(ch.sim)?simMeta(ch.sim).title:''}</h2>
+      <p class="lede">${simMeta(ch.sim)?simMeta(ch.sim).desc:''}</p>
       <p class="hint">${bn?'স্লাইডার নাড়ানোর আগে অনুমান করুন কী হবে — ভুল অনুমানই ভুল ধারণা ভাঙে।':'Predict what will happen before you move each slider. A surprise means a misconception is being corrected.'}</p>
       <div id="simHost"></div>`:''}
     <h2>${t('watch')}</h2>
-    <div class="vidlist">${ch.videos.map(vd=>
-      `<a target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(vd.q)}">▶ ${vd.t}<span class="spacer"></span><span class="tag">YouTube</span></a>`).join('')}
+    <div class="vidlist">${ch.videos.map((vd,i)=>
+      `<a target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(vd.q)}">▶ ${chVideoLabel(ch,i)}<span class="spacer"></span><span class="tag">YouTube</span></a>`).join('')}
       <a target="_blank" rel="noopener" href="https://phet.colorado.edu/en/simulations/filter?q=${encodeURIComponent(ch.terms[0]||ch.title)}">🧪 ${bn?'PhET-এ আরও সিমুলেশন':'More simulations on PhET'}<span class="spacer"></span><span class="tag">PhET</span></a>
       <a target="_blank" rel="noopener" href="https://commons.wikimedia.org/w/index.php?search=${encodeURIComponent(ch.title+' physics')}&search_type=image">🖼 ${bn?'ছবি ও অ্যানিমেশন (উইকিমিডিয়া)':'Photos and animations (Wikimedia Commons)'}<span class="spacer"></span><span class="tag">free to use</span></a></div>
     <h2>${t('checkYourself')}</h2>
@@ -280,7 +281,7 @@ function viewChapter(id){
       <div>${next?`<a href="#/c/${next.id}">${tr(next,'title')} →</a>`:''}</div>
     </div>`;
 
-  if(ch.example && $('#exHost')) steppedExample(ch, $('#exHost'));
+  if(ch.example && $('#exHost')) steppedExample(chExample(ch), $('#exHost'));
   if(ch.sim) mountSim($('#simHost'), ch.sim);
   recallBox(ch, $('#recallHost'));
   mountQuiz($('#quizHost'), ch.id);
@@ -338,28 +339,31 @@ function viewLab(){
   CURRENT = null;
   $('#view').innerHTML = `<div class="crumb">${t('lab')}</div><h1>${LANG.get()==='bn'?'সব সিমুলেশন এক জায়গায়':'Every simulation in one place'}</h1>
     <p class="lede">${Object.keys(SIMS).length} ${LANG.get()==='bn'?'টি সিমুলেশন, প্রতিটি ফ্রেমে প্রকৃত পদার্থবিজ্ঞান হিসাব করে — কিছুই আগে থেকে রেকর্ড করা নয়।':'live simulations. Each one recomputes real physics every frame — nothing is pre-recorded.'}</p>
-    <div class="grid cols-3">${Object.entries(SIMS).map(([k,s])=>
-      `<a class="card" href="#/sim/${k}" style="color:inherit"><b>${s.title}</b><p class="lede" style="font-size:.88rem">${s.desc}</p></a>`).join('')}</div>`;
+    <div class="grid cols-3">${Object.keys(SIMS).map(k=>{ const m=simMeta(k);
+      return `<a class="card" href="#/sim/${k}" style="color:inherit"><b>${m.title}</b><p class="lede" style="font-size:.88rem">${m.desc}</p></a>`;}).join('')}</div>`;
 }
 function viewSim(id){
   const s = SIMS[id]; if(!s){ location.hash='#/lab'; return; }
   const owner = ALL_CHAPTERS.find(c=>c.sim===id);
   CURRENT = owner || null;
-  $('#view').innerHTML = `<div class="crumb"><a href="#/lab">${t('lab')}</a></div><h1>${s.title}</h1>
-    <p class="lede">${s.desc}</p><div id="simHost"></div>
-    ${owner?`<p style="margin-top:1rem">→ <a href="#/c/${owner.id}">${tr(owner,'title')}</a></p>`:''}`;
+  const m = simMeta(id);
+  $('#view').innerHTML = `<div class="crumb"><a href="#/lab">${t('lab')}</a></div><h1>${m.title}</h1>
+    <p class="lede">${m.desc}</p><div id="simHost"></div>
+    ${owner?`<p style="margin-top:1rem">${t('theory')}: <a href="#/c/${owner.id}">${tr(owner,'title')}</a></p>`:''}`;
   mountSim($('#simHost'), id);
 }
 
 function viewGames(){
   CURRENT = null;
   $('#view').innerHTML = `<div class="crumb">${t('games')}</div><h1>${LANG.get()==='bn'?'খেলতে খেলতে অনুশীলন':'Practise by playing'}</h1>
-    <div class="grid cols-3">${GAMES.map(g=>`<a class="card" href="#/game/${g.id}" style="color:inherit"><b>${g.title}</b><p class="lede" style="font-size:.88rem">${g.blurb}</p></a>`).join('')}</div>`;
+    <div class="grid cols-3">${GAMES.map(g=>{ const m=gameMeta(g);
+      return `<a class="card" href="#/game/${g.id}" style="color:inherit"><b>${m.title}</b><p class="lede" style="font-size:.88rem">${m.blurb}</p></a>`;}).join('')}</div>`;
 }
 function viewGame(id){
   const g = GAMES.find(x=>x.id===id); if(!g){ location.hash='#/games'; return; }
   CURRENT = null;
-  $('#view').innerHTML = `<div class="crumb"><a href="#/games">${t('games')}</a></div><h1>${g.title}</h1><p class="lede">${g.blurb}</p><div id="gameHost"></div>`;
+  const gm = gameMeta(g);
+  $('#view').innerHTML = `<div class="crumb"><a href="#/games">${t('games')}</a></div><h1>${gm.title}</h1><p class="lede">${gm.blurb}</p><div id="gameHost"></div>`;
   g.mount($('#gameHost'));
 }
 
@@ -370,7 +374,7 @@ function viewFormulas(){
     html += `<h2>${u.icon} ${tr(u,'title')}</h2>`;
     u.chapters.forEach(c=>{
       html += `<h3><a href="#/c/${c.id}">${tr(c,'title')}</a></h3>`;
-      html += c.formulas.map(f=>`<div class="formula"><b>${f.f}</b>   —   ${f.d}</div>`).join('');
+      html += c.formulas.map((f,i)=>`<div class="formula"><b>${f.f}</b>   —   ${chFormulaDesc(c,i)}</div>`).join('');
     });
   });
   $('#view').innerHTML = html;
@@ -391,13 +395,13 @@ function viewProgress(){
   $('#view').innerHTML = `<div class="crumb">${t('progress')}</div><h1>${t('yourProgress')}</h1>
     <div class="card"><div class="row" style="justify-content:space-between">
       <b>${done} / ${ALL_CHAPTERS.length} ${t('chapters')} · 🔥 ${streak.count} ${t('streak')} · 🧠 ${SRS.due().length} ${t('dueToday')}</b>
-      <button class="btn ghost small" id="resetProg">Reset all progress</button></div>
+      <button class="btn ghost small" id="resetProg">${t('resetAll')}</button></div>
       <div class="bar" style="margin-top:.6rem"><i style="width:${done/ALL_CHAPTERS.length*100}%"></i></div></div>
     <table class="data"><tr><th>${LANG.get()==='bn'?'অধ্যায়':'Chapter'}</th><th>${LANG.get()==='bn'?'ইউনিট':'Unit'}</th>
       <th>${LANG.get()==='bn'?'পড়া':'Read'}</th><th>${LANG.get()==='bn'?'কুইজ':'Quiz'}</th>
       <th>${t('flashcards')}</th><th></th></tr>${rows}</table>`;
   $('#resetProg').onclick = ()=>{
-    if(confirm('Erase all progress, notes and flashcard scheduling on this device?')){
+    if(confirm(t('resetConfirm'))){
       ['pl_progress','pl_srs','pl_notes','pl_wrong','pl_streak'].forEach(k=>localStorage.removeItem(k));
       route(); updateGlobal();
     }
@@ -461,8 +465,19 @@ function boot(){
   syncMode();
   $('#modeBtn').onclick = ()=>{ MODE.toggle(); syncMode(); route(); };
   $('#langBtn').textContent = LANG.get()==='en' ? 'বাং' : 'EN';
+  const syncAIStrings = ()=>{
+    $('#aiTitle').textContent = t('aiTitle');
+    $('#aiKeyLabel').childNodes[0].nodeValue = t('aiKeyLabel')+' ';
+    $('#aiKeyLabel').querySelector('small').textContent = t('aiKeySmall');
+    $('#aiModelLabel').childNodes[0].nodeValue = t('aiModelLabel')+' ';
+    $('#aiSaveBtn').textContent = t('aiSave');
+    $('#aiHint').textContent = t('aiHint');
+    $('#aiText').placeholder = t('aiPlaceholder');
+  };
+  syncAIStrings();
   $('#langBtn').onclick = ()=>{
     LANG.toggle();
+    syncAIStrings();
     document.documentElement.lang = LANG.get()==='bn' ? 'bn' : 'en';
     const syncMode = ()=>{ $('#modeBtn').textContent = MODE.get()==='simple' ? '🌱' : '📖';
     $('#modeBtn').title = MODE.get()==='simple' ? 'Simple mode — click for full detail' : 'Full detail — click for simple mode'; };
@@ -497,7 +512,7 @@ function boot(){
     thinking.textContent = await AI.ask(txt, CURRENT);
     $('#aiLog').scrollTop = 1e9;
   };
-  aiMsg('bot','Hi. Ask me anything about the chapter you are on. I work with no setup at all — add your own Anthropic API key in ⚙️ for full conversational tutoring.');
+  aiMsg('bot', t('aiGreeting'));
   setChips();
 
   window.addEventListener('hashchange', route);

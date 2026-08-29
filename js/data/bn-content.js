@@ -620,3 +620,6 @@ const BN_GAME = {
  formula:{title:'⚡ সূত্র দৌড়',blurb:'ষাট সেকেন্ড। প্রতিটি রাশির সাথে তার সূত্র মেলান। পরীক্ষার ঘড়ি চলার সময় যে দ্রুত মনে পড়া দরকার, গতিই তা তৈরি করে।'},
  graphs:{title:'📈 লেখচিত্র গোয়েন্দা',blurb:'একটি গতির লেখচিত্র দেখানো হবে — বলুন বস্তুটি কী করছে। একাদশ শ্রেণির গতিবিদ্যায় সবচেয়ে বেশি পরীক্ষিত দক্ষতা এটাই।'}
 };
+
+/* Formulas whose symbols contain English words */
+const BN_FORMULA_TEXT = {"percentage uncertainty = (Δx / x) × 100%": "শতকরা অনিশ্চয়তা = (Δx / x) × ১০০%", "s = ∫v dt = area under v–t": "s = ∫v dt = v–t লেখচিত্রের নিচের ক্ষেত্রফল", "tanθ_crit = µ_s": "tanθ_সংকট = µ_s", "v_orbit = √(G·M / r)": "v_কক্ষীয় = √(G·M / r)", "E_spring = ½·k·x²": "E_স্প্রিং = ½·k·x²", "Σp_before = Σp_after": "Σp_আগে = Σp_পরে", "constructive: Δpath = n·λ": "গঠনমূলক: Δপথ = n·λ", "destructive: Δpath = (n + ½)·λ": "ধ্বংসাত্মক: Δপথ = (n + ½)·λ", "P = 1/f  (dioptres)": "P = 1/f  (ডায়প্টার)", "η_Carnot = 1 − T_c / T_h": "η_কার্নো = 1 − T_c / T_h", "R_series = R₁ + R₂": "R_শ্রেণি = R₁ + R₂", "h·f = E_high − E_low": "h·f = E_উঁচু − E_নিচু"};

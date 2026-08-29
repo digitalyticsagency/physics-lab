@@ -92,20 +92,29 @@ const GAMES = [
 
 { id:'graphs', title:'📈 Graph Detective', blurb:'A motion graph appears — say what the object is doing. This is the single most tested skill in Year 11 kinematics.',
   mount(el){
+    const T = {
+      'Constant velocity forward':'সামনে সমবেগে চলছে','Accelerating':'ত্বরিত হচ্ছে','At rest':'স্থির',
+      'Moving backwards':'পেছনে যাচ্ছে','Constant velocity':'সমবেগ','Accelerating forward':'সামনে ত্বরিত হচ্ছে',
+      'Decelerating':'মন্দিত হচ্ছে','Constant velocity, zero acceleration':'সমবেগ, ত্বরণ শূন্য',
+      'Constant acceleration':'সমত্বরণ','Bouncing':'লাফাচ্ছে','Speeding up':'গতি বাড়ছে',
+      'Constant deceleration':'সমহারে মন্দন','Circular motion':'বৃত্তীয় গতি',
+      'Approaching terminal velocity':'প্রান্তিক বেগের দিকে যাচ্ছে','Decelerating to rest':'মন্দিত হয়ে থামছে',
+      'Reversing':'উল্টো দিকে যাচ্ছে','Displacement':'সরণ','Velocity':'বেগ'};
+    const L = x => isBn() ? (T[x]||x) : x;
     const cases=[
-      {draw:c=>{c.moveTo(40,220);c.lineTo(360,60);}, q:'Displacement–time', a:'Constant velocity forward',
+      {draw:c=>{c.moveTo(40,220);c.lineTo(360,60);}, q:'Displacement', a:'Constant velocity forward',
        opts:['Constant velocity forward','Accelerating','At rest','Moving backwards']},
-      {draw:c=>{for(let x=40;x<=360;x+=4)c.lineTo(x,220-((x-40)/320)**2*160);}, q:'Displacement–time', a:'Accelerating forward',
+      {draw:c=>{for(let x=40;x<=360;x+=4)c.lineTo(x,220-((x-40)/320)**2*160);}, q:'Displacement', a:'Accelerating forward',
        opts:['Constant velocity','Accelerating forward','Decelerating','At rest']},
-      {draw:c=>{c.moveTo(40,140);c.lineTo(360,140);}, q:'Velocity–time', a:'Constant velocity, zero acceleration',
+      {draw:c=>{c.moveTo(40,140);c.lineTo(360,140);}, q:'Velocity', a:'Constant velocity, zero acceleration',
        opts:['At rest','Constant velocity, zero acceleration','Constant acceleration','Decelerating']},
-      {draw:c=>{c.moveTo(40,220);c.lineTo(360,60);}, q:'Velocity–time', a:'Constant acceleration',
+      {draw:c=>{c.moveTo(40,220);c.lineTo(360,60);}, q:'Velocity', a:'Constant acceleration',
        opts:['Constant velocity','Constant acceleration','At rest','Bouncing']},
-      {draw:c=>{c.moveTo(40,60);c.lineTo(360,220);}, q:'Velocity–time', a:'Constant deceleration',
+      {draw:c=>{c.moveTo(40,60);c.lineTo(360,220);}, q:'Velocity', a:'Constant deceleration',
        opts:['Speeding up','Constant deceleration','At rest','Circular motion']},
-      {draw:c=>{for(let x=40;x<=360;x+=4)c.lineTo(x,220-160*(1-Math.exp(-(x-40)/70)));}, q:'Velocity–time', a:'Approaching terminal velocity',
+      {draw:c=>{for(let x=40;x<=360;x+=4)c.lineTo(x,220-160*(1-Math.exp(-(x-40)/70)));}, q:'Velocity', a:'Approaching terminal velocity',
        opts:['Constant acceleration','Approaching terminal velocity','Decelerating to rest','At rest']},
-      {draw:c=>{c.moveTo(40,140);c.lineTo(200,140);}, q:'Displacement–time', a:'At rest',
+      {draw:c=>{c.moveTo(40,140);c.lineTo(200,140);}, q:'Displacement', a:'At rest',
        opts:['At rest','Constant velocity','Accelerating','Reversing']}
     ];
     let i=0, score=0;
@@ -120,12 +129,12 @@ const GAMES = [
       ctx.beginPath(); ctx.moveTo(40,20); ctx.lineTo(40,230); ctx.lineTo(380,230); ctx.stroke();
       ctx.strokeStyle=getCSS('--accent'); ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(40,220); c.draw(ctx); ctx.stroke();
       ctx.fillStyle=getCSS('--muted'); ctx.font='12px ui-monospace,monospace';
-      ctx.fillText(c.q.split('–')[0],6,16); ctx.fillText('time',350,248);
-      el.querySelector('#gdQ').textContent = isBn()? `${c.q} লেখচিত্র — কী ঘটছে?` : `${c.q} graph — what is happening?`;
+      ctx.fillText(L(c.q),6,16); ctx.fillText(isBn()?'সময়':'time',350,248);
+      el.querySelector('#gdQ').textContent = isBn()? `${L(c.q)}–সময় লেখচিত্র — কী ঘটছে?` : `${c.q}–time graph — what is happening?`;
       const box=el.querySelector('#gdO'); box.innerHTML='';
-      c.opts.forEach(o=>{ const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+      c.opts.forEach(o=>{ const b=document.createElement('button'); b.className='opt'; b.textContent=L(o);
         b.onclick=()=>{ if(o===c.a){ score+=10; el.querySelector('#gdM').textContent=isBn()?'✅ সঠিক':'✅ correct'; }
-          else el.querySelector('#gdM').textContent=isBn()?`❌ উত্তর: ${c.a}`:`❌ answer: ${c.a}`;
+          else el.querySelector('#gdM').textContent=isBn()?`❌ উত্তর: ${L(c.a)}`:`❌ answer: ${c.a}`;
           el.querySelector('#gdS').textContent=score; i++; show(); };
         box.appendChild(b); });
     }

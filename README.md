@@ -16,7 +16,7 @@ No build step, no dependencies, no account. Open `index.html` and start.
 | **3 games** | target practice, formula rush, graph detective |
 | **AI tutor** | knows which chapter you're on; works with zero setup, or with your own API key |
 | **Spaced repetition** | formulas, cloze drills and every quiz question you missed come back on a widening schedule |
-| **বাংলা / English** | one-click toggle for the interface, chapter titles, summaries and a Bangla key-idea box |
+| **বাংলা / English** | one-click toggle — the entire app, including every explanation, worked example and quiz question |
 | **Progress tracking** | stored locally in your browser, nothing sent anywhere |
 
 ## Built for someone starting from zero
@@ -78,7 +78,9 @@ Two modes:
 
 ## Bangla mode
 
-The **বাং / EN** button in the header switches the whole interface, unit and chapter titles, summaries, and adds a **মূল কথা** (key idea) box written in Bangla for all 30 chapters. Detailed explanations, worked examples and quizzes stay in English on purpose, so exam vocabulary stays familiar. Bangla strings live in `js/data/i18n.js` (`UI.bn`, `BN_UNITS`, `BN_CH`) — adding another language means adding one more block there.
+The **বাং / EN** button in the header switches everything: interface, navigation, unit and chapter titles, summaries, the beginner layer, all 110 detailed section bodies, formula descriptions, worked examples, real-world examples, all 129 quiz questions with their explanations, the 20 simulations (titles, descriptions, slider labels), the diagram captions, all three games, and the AI tutor panel. Equations keep their standard symbols, which are the same in both languages.
+
+Bangla lives in four files — `js/data/i18n.js` (interface), `bn-content.js` (chapters, simulations, games), `bn-detail.js` (full-detail bodies) and `bn-quiz.js` (questions). Every lookup falls back to English if a string is missing, so a partial translation can never blank the page. Adding a third language means adding the same four blocks.
 
 ## Adding another subject
 
@@ -119,6 +121,9 @@ js/
   games.js          3 games
   data/i18n.js      Bangla/English strings and per-chapter translations
   data/simple.js    beginner layer (plain words, analogy, memory hook) + the Start Here unit
+  data/bn-content.js  Bangla chapters, simulations and games
+  data/bn-detail.js   Bangla bodies for the full-detail sections
+  data/bn-quiz.js     Bangla question bank
   graphics.js       32 animated inline SVG diagrams
   memory.js         spaced repetition, cloze cards, recall box, notes, streak
   ai.js             tutor: live API mode + offline retrieval coach

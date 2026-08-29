@@ -8,6 +8,7 @@ const store = {
 let CURRENT = null;
 let simLoop = null;
 let simGen = 0;
+let syncAIStrings = ()=>{};
 const MODE = {
   get(){ return localStorage.getItem('pl_mode')||'simple'; },
   set(v){ localStorage.setItem('pl_mode', v); },
@@ -240,11 +241,11 @@ function viewChapter(id){
     </div>` : '';
 
   const detail = `
-    ${ch.sections.map((sec,i)=>`<h2>${chSectionHead(ch,i)}</h2><div>${sec.body}</div>`).join('')}
+    ${ch.sections.map((sec,i)=>`<h2>${chSectionHead(ch,i)}</h2><div>${chSectionBody(ch,i)}</div>`).join('')}
     ${ch.formulas.length?`<h2>${t('formulasToKnow')}</h2>
       <p class="hint">${bn?'এখনই মুখস্থ করার দরকার নেই। প্রতিটি সূত্রের নিচে সাধারণ ভাষায় মানে লেখা আছে।'
         :'You do not need to memorise these yet. Read each one as the sentence written beside it — the flashcards will do the memorising later.'}</p>
-      ${ch.formulas.map((f,i)=>`<div class="formula"><b>${f.f}</b>   —   ${chFormulaDesc(ch,i)}</div>`).join('')}`:''}
+      ${ch.formulas.map((f,i)=>`<div class="formula"><b>${fText(f.f)}</b>   —   ${chFormulaDesc(ch,i)}</div>`).join('')}`:''}
     ${ch.example?`<h2>${t('workedExample')} — ${ch.example.title}</h2><div id="exHost"></div>`:''}
     <h2>${t('realWorld')}</h2>
     <ul class="clean">${chRealWorld(ch).map(r=>`<li>${r}</li>`).join('')}</ul>`;
@@ -374,7 +375,7 @@ function viewFormulas(){
     html += `<h2>${u.icon} ${tr(u,'title')}</h2>`;
     u.chapters.forEach(c=>{
       html += `<h3><a href="#/c/${c.id}">${tr(c,'title')}</a></h3>`;
-      html += c.formulas.map((f,i)=>`<div class="formula"><b>${f.f}</b>   —   ${chFormulaDesc(c,i)}</div>`).join('');
+      html += c.formulas.map((f,i)=>`<div class="formula"><b>${fText(f.f)}</b>   —   ${chFormulaDesc(c,i)}</div>`).join('');
     });
   });
   $('#view').innerHTML = html;
@@ -426,6 +427,8 @@ function route(){
   else { CURRENT=null; viewHome(); }
   renderNav($('#searchBox').value);
   updateGlobal();
+  syncAIStrings();
+  setChips();
   window.scrollTo(0,0);
   $('#sidebar').classList.remove('open'); $('#scrim').classList.remove('on');
 }
@@ -465,7 +468,7 @@ function boot(){
   syncMode();
   $('#modeBtn').onclick = ()=>{ MODE.toggle(); syncMode(); route(); };
   $('#langBtn').textContent = LANG.get()==='en' ? 'বাং' : 'EN';
-  const syncAIStrings = ()=>{
+  syncAIStrings = ()=>{
     $('#aiTitle').textContent = t('aiTitle');
     $('#aiKeyLabel').childNodes[0].nodeValue = t('aiKeyLabel')+' ';
     $('#aiKeyLabel').querySelector('small').textContent = t('aiKeySmall');
@@ -473,6 +476,10 @@ function boot(){
     $('#aiSaveBtn').textContent = t('aiSave');
     $('#aiHint').textContent = t('aiHint');
     $('#aiText').placeholder = t('aiPlaceholder');
+    const bn2 = LANG.get()==='bn';
+    $('#optSonnet').textContent = 'claude-sonnet-5 ' + (bn2?'(ভারসাম্যপূর্ণ)':'(balanced)');
+    $('#optOpus').textContent   = 'claude-opus-5 ' + (bn2?'(সবচেয়ে গভীর)':'(deepest)');
+    $('#optHaiku').textContent  = 'claude-haiku-4-5 ' + (bn2?'(দ্রুততম)':'(fast)');
   };
   syncAIStrings();
   $('#langBtn').onclick = ()=>{

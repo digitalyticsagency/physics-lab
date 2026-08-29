@@ -13,7 +13,7 @@ const SRS = {
     ALL_CHAPTERS.forEach(c => {
       if(!(prog[c.id] && prog[c.id].read)) return;
       (c.formulas||[]).forEach((f,i) => {
-        out.push({id:`f:${c.id}:${i}`, type:'formula', ch:c, front:chFormulaDesc(c,i), back:f.f});
+        out.push({id:`f:${c.id}:${i}`, type:'formula', ch:c, front:chFormulaDesc(c,i), back:fText(f.f)});
         const cl = SRS.cloze(f.f);
         if(cl) out.push({id:`z:${c.id}:${i}`, type:'cloze', ch:c, front:cl.masked, back:cl.answer, hint:chFormulaDesc(c,i), opts:cl.opts});
       });

@@ -181,6 +181,13 @@ SUBJECTS.forEach(s => s.units.forEach(u => {
 /* ---- content helpers: fall back to English whenever a Bangla string is missing ---- */
 const isBn = () => LANG.get()==='bn';
 const bnCh = id => (isBn() && typeof BN!=='undefined') ? BN[id] : null;
+function fText(f){
+  return (isBn() && typeof BN_FORMULA_TEXT!=='undefined' && BN_FORMULA_TEXT[f]) ? BN_FORMULA_TEXT[f] : f;
+}
+function chSectionBody(ch,i){
+  const b = (isBn() && typeof BN_BODY!=='undefined') ? BN_BODY[ch.id] : null;
+  return (b && b[i]) || ch.sections[i].body;
+}
 function chSectionHead(ch,i){ const b=bnCh(ch.id); return (b&&b.sh&&b.sh[i]) || ch.sections[i].h; }
 function chFormulaDesc(ch,i){ const b=bnCh(ch.id); return (b&&b.f&&b.f[i]) || ch.formulas[i].d; }
 function chExample(ch){ const b=bnCh(ch.id);

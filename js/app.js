@@ -62,6 +62,9 @@ function renderNav(filter=''){
   const due = SRS.due().length;
   foot.innerHTML = `
     <a href="#/review">${t('review')} ${due?`<span class="tag" style="margin-left:auto">${due}</span>`:''}</a>
+    <a href="#/twin">${t('twin')}</a>
+    <a href="#/mistakes">${t('mistakes')} ${(()=>{const n=MISTAKES.all().filter(m=>!m.fixed).length; return n?`<span class="tag" style="margin-left:auto">${n}</span>`:'';})()}</a>
+    <a href="#/derive">${t('derive')}</a>
     <a href="#/lab">${t('lab')}</a>
     <a href="#/games">${t('games')}</a>
     <a href="#/formulas">${t('formulas')}</a>
@@ -144,8 +147,11 @@ function mountQuiz(container, chId){
         if(box.dataset.done) return;
         box.dataset.done = '1'; answered++;
         opts.querySelectorAll('.opt')[q.a].classList.add('correct');
-        if(j===q.a){ correct++; SRS.clearWrong(chId,i); }
-        else { b.classList.add('wrong'); SRS.markWrong(chId,i); }
+        if(j===q.a){ correct++; SRS.clearWrong(chId,i); TWIN.observe(chId, true); }
+        else {
+          b.classList.add('wrong'); SRS.markWrong(chId,i); TWIN.observe(chId, false);
+          MISTAKES.add({ch:chId, kind:'mcq', q:q.q, your:q.o[j], right:q.o[q.a], why:q.e, level:1});
+        }
         box.appendChild(el('div','explain', q.e + (j===q.a?'':` — <i>${t('addedToDeck')}</i>`)));
         $('#qScore').textContent = `${correct} / ${qs.length}`;
         if(answered===qs.length){
@@ -167,7 +173,8 @@ function viewHome(){
   const v = $('#view');
   const done = ALL_CHAPTERS.filter(c=>chapterDone(c.id)).length;
   const due = SRS.due().length, streak = STREAK.get().count;
-  const nextCh = ALL_CHAPTERS.find(c=>!chapterDone(c.id)) || ALL_CHAPTERS[0];
+  const rec = TWIN.recommend();
+  const nextCh = rec.seen ? rec.c : (ALL_CHAPTERS.find(c=>!chapterDone(c.id)) || ALL_CHAPTERS[0]);
   const started = ALL_CHAPTERS.some(c=>(store.get()[c.id]||{}).read);
   const bn = LANG.get()==='bn';
   v.innerHTML = `
@@ -265,6 +272,11 @@ function viewChapter(id){
       <p class="lede">${simMeta(ch.sim)?simMeta(ch.sim).desc:''}</p>
       <p class="hint">${bn?'স্লাইডার নাড়ানোর আগে অনুমান করুন কী হবে — ভুল অনুমানই ভুল ধারণা ভাঙে।':'Predict what will happen before you move each slider. A surprise means a misconception is being corrected.'}</p>
       <div id="simHost"></div>`:''}
+    <h2>${t('resources')}</h2>
+    <div class="vidlist">${(RES[ch.id]||[]).map(([kind,label,url])=>{
+      const m = RES_META[kind]||{icon:'🔗',label:kind,tag:''};
+      return `<a target="_blank" rel="noopener" href="${url}">${m.icon} ${label}<span class="spacer"></span><span class="tag">${bn&&m.label_bn?m.label_bn:m.label}</span></a>`;
+    }).join('')}</div>
     <h2>${t('watch')}</h2>
     <div class="vidlist">${ch.videos.map((vd,i)=>
       `<a target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(vd.q)}">▶ ${chVideoLabel(ch,i)}<span class="spacer"></span><span class="tag">YouTube</span></a>`).join('')}
@@ -274,8 +286,10 @@ function viewChapter(id){
     <div id="recallHost"></div>
     <div id="quizHost"></div>
     <div class="row" style="margin-top:1rem">
+      <a class="btn" href="#/practice/${ch.id}">${t('practiceThis')}</a>
       <button class="btn ghost" id="markBtn">${read?t('marked'):t('markRead')}</button>
       <button class="btn ghost" id="askBtn">${t('askTutor')}</button>
+      <a class="btn ghost" href="#/sheet/${ch.id}">${t('printSheet')}</a>
     </div>
     <div class="footer-nav">
       <div>${prev?`<a href="#/c/${prev.id}">← ${tr(prev,'title')}</a>`:''}</div>
@@ -309,6 +323,110 @@ function viewChapter(id){
   $('#markBtn').onclick = ()=>{ markUnderstood(ch.id); $('#markBtn').textContent = t('marked'); };
   $('#askBtn').onclick = ()=>{ openAI(); $('#aiText').focus(); };
   setChips();
+}
+
+function viewPractice(id){
+  const ch = ALL_CHAPTERS.find(c=>c.id===id); if(!ch){ location.hash='#/'; return; }
+  CURRENT = ch;
+  const bn = isBn();
+  $('#view').innerHTML = `<div class="crumb"><a href="#/c/${ch.id}">${tr(ch,'title')}</a></div>
+    <h1>${t('practice')}</h1>
+    <p class="lede">${bn?'প্রতিটি প্রশ্নের সংখ্যা প্রতিবার নতুন করে তৈরি হয়, তাই একই প্রশ্ন দুবার আসে না। ধাপে ৪টি টানা সঠিক হলে পরের ধাপ খুলে যায়।'
+      :'Numbers are generated fresh every time, so you never meet the same question twice. Four correct in a row clears a level and unlocks the next.'}</p>
+    <div id="pracHost"></div>
+    <div class="card" id="photoHost"></div>`;
+  renderPractice(ch, $('#pracHost'));
+  renderPhotoCheck($('#photoHost'), ch);
+  setChips();
+}
+
+function viewMistakes(){
+  CURRENT = null;
+  const bn = isBn(), groups = MISTAKES.byChapter();
+  const ids = Object.keys(groups);
+  const body = ids.length ? ids.map(cid=>{
+    const ch = ALL_CHAPTERS.find(c=>c.id===cid);
+    const list = groups[cid].slice().reverse();
+    return `<div class="card mistake-group">
+      <div class="row" style="justify-content:space-between">
+        <b><a href="#/c/${cid}">${ch?tr(ch,'title'):cid}</a></b>
+        <span class="tag">${list.filter(m=>!m.fixed).length} / ${list.length}</span></div>
+      ${list.map(m=>`<div class="mistake${m.fixed?' fixed':''}" data-t="${m.t}">
+        <div class="qtext">${m.q}</div>
+        <div class="row mistake-ans">
+          <span class="bad">${t('yourAnswer')}: ${m.your}</span>
+          <span class="good">${t('correctAnswer')}: ${m.right}</span>
+          <span class="tag">${t('level')} ${m.level||1}</span></div>
+        ${m.why?`<div class="explain">${m.why}</div>`:''}
+        <div class="row"><button class="btn small ghost fixbtn" data-t="${m.t}">${m.fixed?'↺':'✓'} ${t('markFixed')}</button>
+        <a class="btn small ghost" href="#/practice/${cid}">${t('practice')}</a></div>
+      </div>`).join('')}</div>`;
+  }).join('') : `<div class="card">${t('noMistakes')}</div>`;
+
+  $('#view').innerHTML = `<div class="crumb">${t('mistakes')}</div><h1>${t('mistakes')}</h1>
+    <p class="lede">${t('mistakesIntro')}</p>${body}`;
+  $('#view').querySelectorAll('.fixbtn').forEach(b=>{
+    b.onclick = ()=>{ MISTAKES.markFixed(+b.dataset.t); viewMistakes(); };
+  });
+}
+
+function viewDerive(){
+  CURRENT = null;
+  $('#view').innerHTML = `<div class="crumb">${t('derive')}</div><h1>${t('derive')}</h1>
+    <p class="lede">${t('deriveIntro')}</p><div id="dagHost"></div>`;
+  renderDeriveGraph($('#dagHost'), null);
+}
+
+function viewTwin(){
+  CURRENT = null;
+  const bn = isBn();
+  const rec = TWIN.recommend(), weak = TWIN.weakest(6), score = TWIN.examScore();
+  const why = !rec.seen ? t('notStarted')
+            : rec.mistakes ? `${rec.mistakes} ${t('unfixedMistakes')}`
+            : t('fadingFast');
+  const bars = weak.map(w=>`<div class="twin-row">
+      <a href="#/c/${w.c.id}">${tr(w.c,'title')}</a>
+      <div class="bar"><i style="width:${Math.round(w.p*100)}%"></i></div>
+      <span>${Math.round(w.p*100)}%</span></div>`).join('');
+  $('#view').innerHTML = `<div class="crumb">${t('twin')}</div><h1>${t('twin')}</h1>
+    <p class="lede">${t('twinIntro')}</p>
+    <div class="grid cols-2">
+      <div class="card next-card"><div class="crumb">${t('studyNext')} · 15 min</div>
+        <b style="font-size:1.15rem">${tr(rec.c,'title')}</b>
+        <p class="hint">${t('because')} ${why}</p>
+        <div class="row"><a class="btn" href="#/c/${rec.c.id}">${bn?'পড়ুন':'Read'}</a>
+        <a class="btn ghost" href="#/practice/${rec.c.id}">${t('practice')}</a></div></div>
+      <div class="card"><div class="crumb">${t('predicted')}</div>
+        <div style="font-size:2.4rem;font-weight:700">${score}%</div>
+        <div class="bar"><i style="width:${score}%"></i></div>
+        <p class="hint">${bn?'সব অধ্যায়ের গড় দখল, আজকের তারিখে ভুলে যাওয়ার হিসাব ধরে।'
+          :'Mean mastery across every chapter, decayed to today by the forgetting model.'}</p></div>
+    </div>
+    <h2>${t('weakest')}</h2>
+    ${weak.length? `<div class="card">${bars}</div>` : `<div class="card">${bn?'কোনো অধ্যায় এখনো পড়া হয়নি।':'No chapters studied yet.'}</div>`}`;
+}
+
+function viewSheet(id){
+  const ch = ALL_CHAPTERS.find(c=>c.id===id); if(!ch){ location.hash='#/'; return; }
+  CURRENT = ch;
+  const bn = isBn(), S = chSimple(ch), qs = quizFor(ch.id).slice(0,5);
+  $('#view').innerHTML = `<div class="crumb no-print"><a href="#/c/${ch.id}">${tr(ch,'title')}</a></div>
+    <div class="row no-print"><button class="btn" id="printBtn">${t('printSheet')}</button></div>
+    <div class="sheet">
+      <h1>${tr(ch,'title')}</h1>
+      <p class="lede">${tr(ch,'summary')}</p>
+      ${S && S.art && ART[S.art] ? `<div class="art-wrap">${ART[S.art]}</div>` : ''}
+      ${S ? `<div class="sheet-cols">
+        <div><b>${bn?'মূল কথা':'Key idea'}</b>${S.what.map(w=>`<p>${w}</p>`).join('')}</div>
+        <div><b>🧠 ${bn?'মনে রাখার কৌশল':'Memory hook'}</b><p>${S.remember}</p>
+          <b>${bn?'তুলনা':'Analogy'}</b><p>${S.analogy}</p></div></div>`:''}
+      <b>${t('formulasToKnow')}</b>
+      ${ch.formulas.map((f,i)=>`<div class="formula"><b>${fText(f.f)}</b> — ${chFormulaDesc(ch,i)}</div>`).join('')}
+      <b>${t('checkYourself')}</b>
+      <ol>${qs.map(q=>`<li>${q.q}</li>`).join('')}</ol>
+      <p class="hint">${bn?'উত্তর':'Answers'}: ${qs.map((q,i)=>`${i+1}. ${q.o[q.a]}`).join(' · ')}</p>
+    </div>`;
+  $('#printBtn').onclick = ()=> window.print();
 }
 
 function viewReview(){
@@ -423,6 +541,11 @@ function route(){
   else if(a==='formulas') viewFormulas();
   else if(a==='progress') viewProgress();
   else if(a==='review') viewReview();
+  else if(a==='practice' && b) viewPractice(b);
+  else if(a==='mistakes') viewMistakes();
+  else if(a==='derive') viewDerive();
+  else if(a==='twin') viewTwin();
+  else if(a==='sheet' && b) viewSheet(b);
   else if(a==='notes') viewNotes();
   else { CURRENT=null; viewHome(); }
   renderNav($('#searchBox').value);

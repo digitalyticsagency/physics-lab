@@ -15,7 +15,14 @@ No build step, no dependencies, no account. Open `index.html` and start.
 | **121 quiz questions** | every answer explained, right or wrong |
 | **3 games** | target practice, formula rush, graph detective |
 | **AI tutor** | knows which chapter you're on; works with zero setup, or with your own API key |
-| **Spaced repetition** | formulas, cloze drills and every quiz question you missed come back on a widening schedule |
+| **Spaced repetition** | formulas, cloze drills, derivations and every quiz question you missed come back on a widening schedule |
+| **500,000+ practice questions** | 96 numeric templates that randomise their numbers, graded on value *and* unit |
+| **Difficulty ladder** | concept → one-step → two-step → exam-style, unlocked four-in-a-row at a time |
+| **Mistake notebook** | every wrong answer collected automatically, your answer beside the right one |
+| **Physics twin** | Bayesian knowledge tracing per chapter — mastery, forgetting, predicted exam score, and what to study next |
+| **Derivation map** | all 56 equations traced back to eight roots, as a clickable graph |
+| **Photo marking** | upload handwritten working and get it checked line by line |
+| **One-page print sheets** | key idea, diagram, formulas, memory hook and five questions per chapter |
 | **বাংলা / English** | one-click toggle — the entire app, including every explanation, worked example and quiz question |
 | **Progress tracking** | stored locally in your browser, nothing sent anywhere |
 
@@ -125,6 +132,12 @@ js/
   data/bn-detail.js   Bangla bodies for the full-detail sections
   data/bn-quiz.js     Bangla question bank
   graphics.js       32 animated inline SVG diagrams
+  data/practice-bank.js  96 randomising numeric templates
+  data/derivations.js    56-node derivation genealogy
+  data/resources.js      95 curated free links (OpenStax, PhET, Khan, Physics Classroom)
+  practice.js       ladder, numeric grading, photo marking
+  twin.js           mistake store + knowledge-state model
+  derive.js         DAG layout and derivation cards
   memory.js         spaced repetition, cloze cards, recall box, notes, streak
   ai.js             tutor: live API mode + offline retrieval coach
   app.js            router, rendering, progress, sim mounting

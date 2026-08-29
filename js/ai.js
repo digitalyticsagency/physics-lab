@@ -54,6 +54,32 @@ The learner is a complete beginner. Rules:
     }
   },
 
+  /* Mark a photograph of handwritten working, line by line. Needs the user's own key. */
+  async checkWorking(dataUrl, mediaType, chapter){
+    const key = this.key();
+    if(!key) return {ok:false, text: t('needKeyForPhoto')};
+    const sys = `You are marking a student's handwritten physics solution.
+Go line by line. For each line say whether it is correct, and if not, name exactly what went wrong
+(algebra slip, wrong formula, unit not converted, sign error, arithmetic).
+Then state the single line where the error first entered, and give one short hint — not the full answer.
+Be encouraging and brief. Reply in ${isBn()?'Bangla':'English'}.`;
+    try{
+      const res = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'content-type':'application/json','x-api-key':key,
+                 'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body: JSON.stringify({model:this.model(), max_tokens:900, system:this.systemPrompt(chapter),
+          messages:[{role:'user', content:[
+            {type:'image', source:{type:'base64', media_type:mediaType, data:dataUrl.split(',')[1]}},
+            {type:'text', text: sys}
+          ]}]})
+      });
+      if(!res.ok) return {ok:false, text:`API returned ${res.status}.`};
+      const data = await res.json();
+      return {ok:true, text:(data.content||[]).map(c=>c.text||'').join('')};
+    }catch(e){ return {ok:false, text:'Could not reach the API: '+e.message}; }
+  },
+
   /* Offline coach: ranked retrieval over sections, formulas and chapter summaries. */
   offline(text, ch){
     const q = text.toLowerCase().trim();

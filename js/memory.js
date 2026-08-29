@@ -29,6 +29,7 @@ const SRS = {
       const c = ALL_CHAPTERS.find(x=>x.id===w.ch); const q = (quizFor(w.ch)||[])[w.i];
       if(c && q) out.push({id:`q:${w.ch}:${w.i}`, type:'quiz', ch:c, front:q.q, back:q.o[q.a], why:q.e});
     });
+    deriveCards().forEach(c=>out.push(c));
     return out;
   },
 
@@ -99,6 +100,11 @@ const NOTES = {
 };
 
 /* ---------- review session UI ---------- */
+const INTERLEAVE = {
+  on(){ return localStorage.getItem('pl_interleave') !== 'off'; },
+  toggle(){ localStorage.setItem('pl_interleave', this.on() ? 'off' : 'on'); return this.on(); }
+};
+
 function renderReview(host){
   let queue = SRS.due().sort(()=>Math.random()-0.5);   // interleaved on purpose
   const streak = STREAK.get();
@@ -110,7 +116,10 @@ function renderReview(host){
   function header(){
     head.innerHTML = `<div class="row" style="justify-content:space-between">
       <b>${queue.length} ${t('cardsLeft')}</b>
-      <span class="tag">🔥 ${streak.count} ${t('streak')}</span></div>`;
+      <span class="tag">🔥 ${streak.count} ${t('streak')}</span>
+      <button class="btn small ghost" id="ilBtn" title="${t('interleaveHelp')}">${INTERLEAVE.on()?t('interleaveOn'):t('interleaveOff')}</button></div>`;
+    const ib = head.querySelector('#ilBtn');
+    if(ib) ib.onclick = ()=>{ INTERLEAVE.toggle(); header(); };
     updateGlobal();
   }
   function done(){
@@ -123,6 +132,15 @@ function renderReview(host){
     header();
     if(!queue.length) return done();
     const card = queue[0];
+    // bilingual interleave: about a third of cards flip to the other language,
+    // so one idea gets two retrieval routes
+    let flipped = false;
+    if(INTERLEAVE.on() && Math.random() < 0.34){
+      LANG.set(LANG.get()==='bn' ? 'en' : 'bn');
+      flipped = true;
+      const fresh = SRS.cards().find(c=>c.id===card.id);
+      if(fresh) Object.assign(card, fresh);
+    }
     body.innerHTML = '';
     const box = el('div','card');
     box.appendChild(el('div','crumb', tr(card.ch,'title')));
@@ -146,6 +164,7 @@ function renderReview(host){
     } else {
       box.appendChild(el('h3',null, card.front));
       if(card.type==='formula') box.appendChild(el('p','hint', t('recallFirst')));
+      if(card.type==='derive') box.appendChild(el('p','hint', isBn()?'কাগজে নিজে গড়ে তোলার চেষ্টা করুন, তারপর দেখুন।':'Rebuild it on paper first, then reveal.'));
       const showBtn = el('button','btn', t('showAnswer'));
       const ans = el('div','hidden');
       if(card.back) ans.appendChild(el('div','formula', card.back));
@@ -162,6 +181,7 @@ function renderReview(host){
       box.appendChild(showBtn); box.appendChild(ans); box.appendChild(grades);
     }
     body.appendChild(box);
+    if(flipped) box.insertBefore(el('div','tag', LANG.get()==='bn'?'বাংলায়':'in English'), box.firstChild);
     body.appendChild(el('p','hint', `<a href="#/c/${card.ch.id}">${tr(card.ch,'title')} →</a>`));
   }
   next();

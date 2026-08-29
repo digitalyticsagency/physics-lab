@@ -1,5 +1,15 @@
 /* Question bank, keyed by chapter id. a = index of correct option. */
 const QUIZ = {
+'c0-what':[
+ {q:'Where do physics formulas come from?',o:['They were invented first, then tested','Someone watched something happen, described it, then wrote it in symbols','They are guesses that cannot be checked','They come from mathematics alone'],a:1,e:'Observation comes first. The symbols are shorthand for a description that already made sense in words.'},
+ {q:'Reading "v = u + at" as a sentence, it says…',o:['Speed equals time','New speed = old speed + what you gained','Distance equals speed','Acceleration equals velocity'],a:1,e:'Every equation in this course is a short English sentence in disguise.'},
+ {q:'You drop a flat sheet of paper and a crumpled one. The crumpled one lands first because…',o:['it is heavier','gravity pulls it harder','the flat sheet meets more air resistance','it fell from higher up'],a:2,e:'Same paper, same weight. Only the air resistance changed — so that difference must be the cause.'},
+ {q:'When you get stuck, the best first move is to…',o:['read the chapter again','draw the situation and name what is pushing what','skip to the next chapter','memorise the formula'],a:1,e:'A drawing plus naming the forces solves most problems before any algebra starts.'}],
+'c0-learn':[
+ {q:'Which is the stronger way to study?',o:['Re-reading the chapter three times','Closing the page and trying to recall it once','Highlighting the important lines','Copying out the formulas'],a:1,e:'Retrieval practice beats re-reading by a wide margin. It feels harder, which is exactly why it works.'},
+ {q:'Why does spacing your study beat cramming?',o:['It takes less total time','Meeting material again as it starts to fade makes the memory last much longer','Teachers prefer it','It avoids tiredness'],a:1,e:'The gap is the active ingredient, not the total hours.'},
+ {q:'Practising twenty projectile questions in a row is weaker than mixing topics because…',o:['it is boring','you stop reading the question — you already know the method','projectiles are easy','mixing is faster'],a:1,e:'Interleaving forces you to identify the problem type, which is the skill exams actually test.'},
+ {q:'Which is NOT a real sign that you have learned something?',o:['You can explain it to a non-physicist','You can predict the simulation before moving a slider','The chapter feels familiar while you re-read it','You can tell which chapter a random question belongs to'],a:2,e:'Familiarity while re-reading is the most common illusion of learning. Recall from a blank page is the real test.'}],
 'c1-units':[
  {q:'Which of these is NOT an SI base unit?',o:['kilogram','newton','kelvin','mole'],a:1,e:'The newton is derived: 1 N = 1 kg·m·s⁻².'},
  {q:'Express 4.7 GW in watts.',o:['4.7×10⁶ W','4.7×10⁹ W','4.7×10¹² W','4.7×10³ W'],a:1,e:'Giga = 10⁹.'},

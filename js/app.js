@@ -7,7 +7,12 @@ const store = {
 };
 let CURRENT = null;
 let simLoop = null;
-let simGen = 0;          // generation token so old loops cannot survive a route change
+let simGen = 0;
+const MODE = {
+  get(){ return localStorage.getItem('pl_mode')||'simple'; },
+  set(v){ localStorage.setItem('pl_mode', v); },
+  toggle(){ const n = this.get()==='simple'?'full':'simple'; this.set(n); return n; }
+};          // generation token so old loops cannot survive a route change
 
 /* ---------- progress ---------- */
 function markUnderstood(id){
@@ -160,15 +165,26 @@ function viewHome(){
   const v = $('#view');
   const done = ALL_CHAPTERS.filter(c=>chapterDone(c.id)).length;
   const due = SRS.due().length, streak = STREAK.get().count;
+  const nextCh = ALL_CHAPTERS.find(c=>!chapterDone(c.id)) || ALL_CHAPTERS[0];
+  const started = ALL_CHAPTERS.some(c=>(store.get()[c.id]||{}).read);
+  const bn = LANG.get()==='bn';
   v.innerHTML = `
-    <div class="crumb">${PHYSICS.icon} ${LANG.get()==='bn'?'ইন্টারঅ্যাকটিভ কোর্স':'Interactive course'}</div>
+    <div class="crumb">${PHYSICS.icon} ${bn?'ইন্টারঅ্যাকটিভ কোর্স':'Interactive course'}</div>
     <h1>${LANG.get()==='bn'?'একদম শুরু থেকে পদার্থবিজ্ঞান শিখুন':'Learn physics from the very beginning'}</h1>
     <p class="lede">${LANG.get()==='bn'
       ? 'শূন্য থেকে শুরু করে একাদশ ও দ্বাদশ শ্রেণির পুরো পদার্থবিজ্ঞান। প্রতিটি অধ্যায়ে সহজ ব্যাখ্যা, সমাধান করা উদাহরণ, বাস্তব ব্যবহার, চালিয়ে দেখার মতো সিমুলেশন এবং কুইজ আছে — সাথে ভুলে না যাওয়ার জন্য ব্যবধানযুক্ত রিভিশন।'
       : PHYSICS.tagline + ' Every chapter has a plain-language explanation, a worked example you reveal step by step, real-world uses, a live simulation and a quiz — plus spaced review so it actually stays in your head.'}</p>
+    <div class="art-wrap hero">${ART.welcome}</div>
+    <div class="card next-card">
+      <div class="crumb">${bn?'পরের ধাপ':'Your next step'}</div>
+      <b style="font-size:1.1rem">${started ? tr(nextCh,'title') : (bn?'একদম শুরু থেকে শুরু করুন':'Start at the very beginning')}</b>
+      <p class="lede" style="font-size:.92rem;margin:.3rem 0 .6rem">${started ? tr(nextCh,'summary') : (bn?'প্রথম দুটি অধ্যায়ে কোনো সূত্র নেই — পদার্থবিজ্ঞান কী আর কীভাবে দ্রুত শিখবেন, শুধু সেটাই।':'The first two chapters contain no formulas at all — just what physics is, and how to study it so it sticks.')}</p>
+      <div class="row">
+        <a class="btn" href="#/c/${started?nextCh.id:ALL_CHAPTERS[0].id}">${started ? (bn?'চালিয়ে যান':'Continue') : t('startCh1')}</a>
+        ${due?`<a class="btn ghost" href="#/review">🧠 ${due} ${t('dueToday')}</a>`:''}
+      </div>
+    </div>
     <div class="row" style="margin:1rem 0">
-      <a class="btn" href="#/c/${ALL_CHAPTERS[0].id}">${t('startCh1')}</a>
-      ${due?`<a class="btn" href="#/review">${t('reviewNow')} (${due})</a>`:''}
       <a class="btn ghost" href="#/lab">${t('openLab')}</a>
       <a class="btn ghost" href="#/games">${t('playGame')}</a>
     </div>
@@ -207,26 +223,51 @@ function viewChapter(id){
   const prev = ALL_CHAPTERS[idx-1], next = ALL_CHAPTERS[idx+1];
   const levelTag = {foundation:t('beginner'), y11:t('y11'), y12:t('y12')}[ch.level]||ch.level;
   const read = (store.get()[ch.id]||{}).read;
+  const S = ch.simple;
+  const simpleMode = MODE.get()==='simple';
+  const bn = LANG.get()==='bn';
   const v = $('#view');
+
+  const simpleBlock = S ? `
+    <div class="simple-block">
+      ${S.art && ART[S.art] ? `<div class="art-wrap">${ART[S.art]}</div>` : ''}
+      <div class="plain">${S.what.map(w=>`<p>${w}</p>`).join('')}</div>
+      <div class="callout"><div class="lbl">${bn?'সহজ তুলনা':'Think of it like this'}</div>${S.analogy}</div>
+      <div class="callout remember"><div class="lbl">🧠 ${bn?'মনে রাখার কৌশল':'Trick to remember'}</div>${S.remember}</div>
+      <div class="callout try"><div class="lbl">🖐 ${bn?'নিজে করে দেখুন':'Try it yourself'}</div>${S.tryThis}</div>
+      <div class="row ai-quick" id="aiQuick"></div>
+    </div>` : '';
+
+  const detail = `
+    ${ch.sections.map(s=>`<h2>${s.h}</h2><div>${s.body}</div>`).join('')}
+    ${ch.formulas.length?`<h2>${t('formulasToKnow')}</h2>
+      <p class="hint">${bn?'এখনই মুখস্থ করার দরকার নেই। প্রতিটি সূত্রের নিচে সাধারণ ভাষায় মানে লেখা আছে।'
+        :'You do not need to memorise these yet. Read each one as the sentence written beside it — the flashcards will do the memorising later.'}</p>
+      ${ch.formulas.map(f=>`<div class="formula"><b>${f.f}</b>   —   ${f.d}</div>`).join('')}`:''}
+    ${ch.example?`<h2>${t('workedExample')} — ${ch.example.title}</h2><div id="exHost"></div>`:''}
+    <h2>${t('realWorld')}</h2>
+    <ul class="clean">${ch.realWorld.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+
   v.innerHTML = `
     <div class="crumb">${ch._unit.icon} ${tr(ch._unit,'title')}</div>
     <h1>${tr(ch,'title')}</h1>
     <div class="row"><span class="tag">${levelTag}</span>${ch.sim?`<span class="tag">${t('interactiveSim')}</span>`:''}<span class="tag">${(QUIZ[ch.id]||[]).length} ${t('quizQuestions')}</span></div>
-    <p class="lede">${tr(ch,'summary')}</p>
-    ${LANG.get()==='bn' && ch.bn_keyIdea ? `<div class="callout"><div class="lbl">${t('keyIdea')}</div>${ch.bn_keyIdea}</div>
-      <p class="hint">${t('bnNote')}</p>` : ''}
-    ${ch.sections.map(s=>`<h2>${s.h}</h2><div>${s.body}</div>`).join('')}
-    <h2>${t('formulasToKnow')}</h2>
-    ${ch.formulas.map(f=>`<div class="formula"><b>${f.f}</b>   —   ${f.d}</div>`).join('')}
-    <h2>${t('workedExample')} — ${ch.example.title}</h2>
-    <div id="exHost"></div>
-    <h2>${t('realWorld')}</h2>
-    <ul class="clean">${ch.realWorld.map(r=>`<li>${r}</li>`).join('')}</ul>
+    ${(S && simpleMode && !bn) ? '' : `<p class="lede">${tr(ch,'summary')}</p>`}
+    ${bn && ch.bn_keyIdea ? `<div class="callout"><div class="lbl">${t('keyIdea')}</div>${ch.bn_keyIdea}</div>` : ''}
+    ${simpleBlock}
+    ${S ? `<div class="row" style="margin:1.2rem 0 .4rem">
+      <button class="btn ghost" id="detailBtn">${simpleMode ? (bn?'📖 পুরো ব্যাখ্যা দেখান':'📖 Show the full explanation') : (bn?'🌱 সহজ ভাষায় দেখান':'🌱 Keep it simple')}</button>
+      <span class="hint">${bn?'সহজ মোড ডিফল্ট। প্রস্তুত হলে বিস্তারিত খুলুন।':'Simple mode is on by default. Open the detail when you feel ready.'}</span></div>` : ''}
+    <div id="detailHost" class="${S && simpleMode ? 'hidden':''}">${detail}</div>
     ${ch.sim?`<h2>${t('tryIt')} — ${SIMS[ch.sim]?SIMS[ch.sim].title:''}</h2>
-      <p class="lede">${SIMS[ch.sim]?SIMS[ch.sim].desc:''}</p><div id="simHost"></div>`:''}
+      <p class="lede">${SIMS[ch.sim]?SIMS[ch.sim].desc:''}</p>
+      <p class="hint">${bn?'স্লাইডার নাড়ানোর আগে অনুমান করুন কী হবে — ভুল অনুমানই ভুল ধারণা ভাঙে।':'Predict what will happen before you move each slider. A surprise means a misconception is being corrected.'}</p>
+      <div id="simHost"></div>`:''}
     <h2>${t('watch')}</h2>
     <div class="vidlist">${ch.videos.map(vd=>
-      `<a target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(vd.q)}">▶ ${vd.t}<span class="spacer"></span><span class="tag">YouTube</span></a>`).join('')}</div>
+      `<a target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(vd.q)}">▶ ${vd.t}<span class="spacer"></span><span class="tag">YouTube</span></a>`).join('')}
+      <a target="_blank" rel="noopener" href="https://phet.colorado.edu/en/simulations/filter?q=${encodeURIComponent(ch.terms[0]||ch.title)}">🧪 ${bn?'PhET-এ আরও সিমুলেশন':'More simulations on PhET'}<span class="spacer"></span><span class="tag">PhET</span></a>
+      <a target="_blank" rel="noopener" href="https://commons.wikimedia.org/w/index.php?search=${encodeURIComponent(ch.title+' physics')}&search_type=image">🖼 ${bn?'ছবি ও অ্যানিমেশন (উইকিমিডিয়া)':'Photos and animations (Wikimedia Commons)'}<span class="spacer"></span><span class="tag">free to use</span></a></div>
     <h2>${t('checkYourself')}</h2>
     <div id="recallHost"></div>
     <div id="quizHost"></div>
@@ -238,10 +279,31 @@ function viewChapter(id){
       <div>${prev?`<a href="#/c/${prev.id}">← ${tr(prev,'title')}</a>`:''}</div>
       <div>${next?`<a href="#/c/${next.id}">${tr(next,'title')} →</a>`:''}</div>
     </div>`;
-  steppedExample(ch, $('#exHost'));
+
+  if(ch.example && $('#exHost')) steppedExample(ch, $('#exHost'));
   if(ch.sim) mountSim($('#simHost'), ch.sim);
   recallBox(ch, $('#recallHost'));
   mountQuiz($('#quizHost'), ch.id);
+  if(S){
+    $('#detailBtn').onclick = ()=>{
+      const on = MODE.toggle();
+      viewChapter(id);
+      if(on==='full') $('#detailHost').scrollIntoView({behavior:'smooth'});
+    };
+    const quick = $('#aiQuick');
+    const asks = bn
+      ? [['আরও সহজ করে বলো','Explain this even more simply, as if I am 12 years old'],
+         ['একটা উদাহরণ দাও','Give me one more everyday example of this'],
+         ['আমাকে প্রশ্ন করো','Ask me one question about this chapter and wait for my answer']]
+      : [['Explain it even simpler','Explain this even more simply, as if I am 12 years old'],
+         ['Give me an example','Give me one more everyday example of this'],
+         ['Quiz me','Ask me one question about this chapter and wait for my answer']];
+    asks.forEach(([label,prompt])=>{
+      const b = el('button','btn small ghost', '🧠 '+label);
+      b.onclick = ()=>{ openAI(); $('#aiText').value = prompt; $('#aiForm').dispatchEvent(new Event('submit',{cancelable:true})); };
+      quick.appendChild(b);
+    });
+  }
   $('#markBtn').onclick = ()=>{ markUnderstood(ch.id); $('#markBtn').textContent = t('marked'); };
   $('#askBtn').onclick = ()=>{ openAI(); $('#aiText').focus(); };
   setChips();
@@ -394,11 +456,19 @@ function boot(){
     const now = document.body.dataset.theme==='dark' ? 'light':'dark';
     document.body.dataset.theme = now; localStorage.setItem('pl_theme', now);
   };
+  const syncMode = ()=>{ $('#modeBtn').textContent = MODE.get()==='simple' ? '🌱' : '📖';
+    $('#modeBtn').title = MODE.get()==='simple' ? 'Simple mode — click for full detail' : 'Full detail — click for simple mode'; };
+  syncMode();
+  $('#modeBtn').onclick = ()=>{ MODE.toggle(); syncMode(); route(); };
   $('#langBtn').textContent = LANG.get()==='en' ? 'বাং' : 'EN';
   $('#langBtn').onclick = ()=>{
     LANG.toggle();
     document.documentElement.lang = LANG.get()==='bn' ? 'bn' : 'en';
-    $('#langBtn').textContent = LANG.get()==='en' ? 'বাং' : 'EN';
+    const syncMode = ()=>{ $('#modeBtn').textContent = MODE.get()==='simple' ? '🌱' : '📖';
+    $('#modeBtn').title = MODE.get()==='simple' ? 'Simple mode — click for full detail' : 'Full detail — click for simple mode'; };
+  syncMode();
+  $('#modeBtn').onclick = ()=>{ MODE.toggle(); syncMode(); route(); };
+  $('#langBtn').textContent = LANG.get()==='en' ? 'বাং' : 'EN';
     route(); setChips();
   };
   document.documentElement.lang = LANG.get()==='bn' ? 'bn' : 'en';

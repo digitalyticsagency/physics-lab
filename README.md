@@ -8,7 +8,9 @@ No build step, no dependencies, no account. Open `index.html` and start.
 
 | | |
 |---|---|
-| **30 chapters** | across 9 units, from "what is a unit" to special relativity |
+| **Beginner-first** | every chapter opens in **Simple mode**: a picture, plain English, an everyday comparison and a memory trick — formulas stay folded away until you ask for them |
+| **32 chapters** | across 10 units, starting with two that contain no formulas at all |
+| **32 animated diagrams** | hand-built inline SVG, themed light/dark, no external image host to break |
 | **20 live simulations** | real physics recomputed every frame — projectiles, orbits, collisions, waves, circuits, fields, decay |
 | **121 quiz questions** | every answer explained, right or wrong |
 | **3 games** | target practice, formula rush, graph detective |
@@ -16,6 +18,14 @@ No build step, no dependencies, no account. Open `index.html` and start.
 | **Spaced repetition** | formulas, cloze drills and every quiz question you missed come back on a widening schedule |
 | **বাংলা / English** | one-click toggle for the interface, chapter titles, summaries and a Bangla key-idea box |
 | **Progress tracking** | stored locally in your browser, nothing sent anywhere |
+
+## Built for someone starting from zero
+
+Open any chapter and you get, in this order: an animated diagram, three or four short plain-English sentences, an everyday analogy, a trick for remembering it, and a small experiment you can do with things in your kitchen. Only then — behind a **Show the full explanation** button — come the formal sections, the equations and the worked example.
+
+The 🌱 / 📖 button in the header switches every chapter between the two levels, and the choice is remembered.
+
+Three one-click AI buttons sit under the simple explanation of each chapter: **Explain it even simpler**, **Give me an example**, **Quiz me**. They work with no API key at all — the offline coach answers from the chapter's own plain-English layer.
 
 ## Built to be remembered, not just read
 
@@ -32,6 +42,7 @@ The learning design is deliberate — these are the techniques with the stronges
 
 ### Course map
 
+0. **Start Here** — what physics actually is · how to learn this fast *(no equations)*
 1. **Foundations** — quantities and units · measurement and uncertainty · vectors
 2. **Kinematics** — straight-line motion · motion graphs · projectiles
 3. **Dynamics** — Newton's laws · friction and inclines · circular motion · gravitation
@@ -107,6 +118,8 @@ js/
   sims.js           20 simulations + tiny canvas helper library
   games.js          3 games
   data/i18n.js      Bangla/English strings and per-chapter translations
+  data/simple.js    beginner layer (plain words, analogy, memory hook) + the Start Here unit
+  graphics.js       32 animated inline SVG diagrams
   memory.js         spaced repetition, cloze cards, recall box, notes, streak
   ai.js             tutor: live API mode + offline retrieval coach
   app.js            router, rendering, progress, sim mounting

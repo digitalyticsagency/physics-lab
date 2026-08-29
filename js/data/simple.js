@@ -1,0 +1,330 @@
+/* Beginner layer: plain-English version of every chapter, plus the art it uses
+   and a trick for remembering it. Shown first; the formal sections come after. */
+
+const SIMPLE = {
+'c0-what':{art:'welcome',
+  what:['Physics is the study of how stuff moves, pushes, heats up, glows and sticks together.',
+        'It looks hard because of the symbols. The symbols are just shorthand — every one stands for a plain idea you already have.',
+        'You need three habits: picture what is happening, name what is pushing what, and check whether your answer is a size you would believe.'],
+  analogy:'Learning physics is like learning to cook. Recipes (formulas) are useless until you know what heat, salt and time actually do. This course teaches the taste first, the recipe second.',
+  remember:'Every physics question is one of four: How fast? How hard? How much energy? How does it change over time?',
+  tryThis:'Drop a coin and a sheet of paper together. Then crumple the paper into a ball and repeat. Same weight of paper, different result — that difference is air resistance, and you have just done an experiment.'},
+
+'c0-learn':{art:'brain',
+  what:['Reading a chapter twice feels productive and does almost nothing. Trying to recall it once does a lot.',
+        'So the loop here is: skim → try → check → repeat later. Never read-and-move-on.',
+        'Fifteen focused minutes a day beats three hours on Sunday, because memory is built by the gaps between sessions, not the length of one.'],
+  analogy:'Your memory is a path through grass. Re-reading is looking at the path. Recalling is walking it. Only walking wears a track.',
+  remember:'THREE PASSES: pass 1 read the simple part, pass 2 do the simulation and predict, pass 3 answer the quiz from memory.',
+  tryThis:'Set a 15-minute timer. Do one chapter: simple part, simulation, quiz. Stop when the timer ends even if you want to continue — that is what makes you come back tomorrow.'},
+
+'c1-units':{art:'units',
+  what:['A number alone means nothing. "30" could be 30 metres, 30 seconds or 30 kilograms.',
+        'Scientists agreed on seven basic units. Everything else is built from them, like words built from letters.',
+        'Before you calculate anything, change all your numbers into metres, kilograms and seconds.'],
+  analogy:'Units are like currencies. 100 is a great salary in one country and a coffee in another. The number is meaningless until you say which money it is.',
+  remember:'Say the unit out loud with every number, every time. "Twenty metres per second", never just "twenty".',
+  tryThis:'Look at any food packet. Find three different units on it. Notice that none of the numbers make sense without them.'},
+
+'c1-measure':{art:'measure',
+  what:['No measurement is exact. A ruler gives you "about 12.3 cm", never a perfect number.',
+        'So every good answer is a value plus a range: 12.3 ± 0.1 cm.',
+        'Two ways to be wrong: random wobble (fix by repeating and averaging) and a fixed offset (fix by finding the fault).'],
+  analogy:'A bathroom scale that always reads 2 kg heavy is precise but wrong — it gives the same answer every time, and that answer is a lie. Weighing yourself ten times will never reveal it.',
+  remember:'RANDOM = repeat it away. SYSTEMATIC = spot it and stop it.',
+  tryThis:'Time ten seconds on a stopwatch by feel, five times. Your five answers differ — that spread is random error, and now you know its size.'},
+
+'c1-vectors':{art:'vector',
+  what:['Some things need only a size: mass, time, temperature. Those are scalars.',
+        'Some things need a size AND a direction: a push, a speed, a step. Those are vectors.',
+        'To add vectors, walk them one after another. Where you end up is the answer.'],
+  analogy:'Walk 3 steps east then 4 steps north. You walked 7 steps, but you are only 5 steps from where you started. Distance and displacement are different animals.',
+  remember:'Draw the arrows before touching any numbers. A drawing has never once been wrong about direction.',
+  tryThis:'Walk across a room, then straight back. Distance travelled: big. Displacement: zero. You proved it with your feet.'},
+
+'c2-linear':{art:'speed',
+  what:['Speed is how much ground you cover each second.',
+        'Acceleration is how much your speed changes each second — pressing the pedal, or the brake.',
+        'When acceleration is steady, four small equations link start speed, end speed, time, distance and acceleration.'],
+  analogy:'Speed is your bank balance. Acceleration is your monthly saving rate. A high balance and a high saving rate are completely different things.',
+  remember:'Write down the three things you know and circle the one you want. The right equation is the one containing exactly those four.',
+  tryThis:'In a car as a passenger, watch the speedometer. Steady needle = zero acceleration even at 100 km/h. That surprises most people.'},
+
+'c2-graphs':{art:'graphs',
+  what:['A graph of distance against time: the steepness tells you the speed.',
+        'A graph of speed against time: the steepness tells you the acceleration, and the area underneath tells you the distance.',
+        'That is the whole chapter. Steepness and area.'],
+  analogy:'Steepness is how hard the hill is right now. Area is how much ground you covered in total.',
+  remember:'SLOPE takes you DOWN the chain (distance → speed → acceleration). AREA takes you back UP.',
+  tryThis:'Sketch your journey to school as a distance-time graph. Flat parts are waiting; steep parts are the bus.'},
+
+'c2-projectile':{art:'projectile',
+  what:['Throw anything and two separate things happen at once.',
+        'Sideways: it keeps going at the same speed, forever, because nothing pushes it sideways.',
+        'Downways: it falls exactly like a dropped stone. The two never interfere.'],
+  analogy:'A bullet fired level and a bullet dropped from the same height hit the ground at the same moment. Sounds impossible. It is true, and it is this chapter in one sentence.',
+  remember:'SPLIT IT IN TWO. Sideways problem, downways problem, and time is the only thing they share.',
+  tryThis:'Roll a coin off a table and drop another at the same instant. Listen — one click, not two.'},
+
+'c3-newton':{art:'forces',
+  what:['Things do not need a push to keep moving. They need a push to CHANGE how they move.',
+        'Push harder → speeds up faster. Heavier thing → speeds up slower. That is F = ma.',
+        'Every push comes with an equal push back on you. You cannot push a wall without the wall pushing you.'],
+  analogy:'In space, a thrown ball never stops. On Earth it stops because friction and air are quietly pushing it backwards — not because "motion runs out".',
+  remember:'Draw the object as a dot and draw every arrow pushing it. If the arrows cancel, nothing changes. If they do not, it accelerates that way.',
+  tryThis:'Sit in a wheeled chair and push a wall. You roll backwards. The wall pushed you, exactly as hard as you pushed it.'},
+
+'c3-friction':{art:'friction',
+  what:['Friction is the grip between two surfaces that resists sliding.',
+        'It is stronger when the surfaces are pressed together harder — not when they are bigger.',
+        'A resting object grips harder than a sliding one, which is why a stuck box suddenly lurches.'],
+  analogy:'Tilt a tray with a mug on it. Nothing happens, nothing happens, nothing happens — then it slides all at once. That tipping point is where gravity finally beats grip.',
+  remember:'Tilt until it slips: that angle IS the grip number. Steeper grip, steeper angle.',
+  tryThis:'Put a coin on a book and slowly tilt. Note the angle it slides. Repeat with a rubber eraser — steeper, because rubber grips more.'},
+
+'c3-circular':{art:'circular',
+  what:['Going round a corner at steady speed is still accelerating, because your direction keeps changing.',
+        'Something must be constantly pulling you toward the centre: string, friction, gravity, a wall.',
+        'There is no outward force. The outward feeling is your body trying to go straight.'],
+  analogy:'On a roundabout you feel flung outward. Actually the car door is pushing you inward; without it you would carry on in a straight line and leave the road.',
+  remember:'Ask one question: WHAT IS PULLING IT INWARD? Name that force and the problem is solved.',
+  tryThis:'Swing keys on a string. Feel the pull in your fingers — that is you pulling them inward. Let go and they fly off straight, not outward.'},
+
+'c3-gravity':{art:'orbit',
+  what:['Every mass pulls every other mass. Bigger masses pull harder; distance weakens it fast.',
+        'Double the distance and the pull drops to a quarter, not a half.',
+        'A satellite is not "beyond gravity" — it is falling, but moving sideways so fast that it keeps missing the Earth.'],
+  analogy:'Throw a ball harder and it lands further away. Throw it impossibly hard and the ground curves away as fast as the ball falls. That is an orbit.',
+  remember:'Twice as far = a QUARTER of the pull. Three times as far = a NINTH. Square the distance, flip it.',
+  tryThis:'Astronauts float on the space station where gravity is still about 89% of ground level. Ask yourself why — the answer is "they are falling too", and now you understand orbits.'},
+
+'c4-energy':{art:'energy',
+  what:['Energy is the currency of change. You cannot create or destroy it, only move it around.',
+        'High up = stored energy. Moving fast = energy of motion. Rub something = energy leaked as heat.',
+        'Doubling your speed does not double the energy — it quadruples it.'],
+  analogy:'A roller coaster spends its height to buy speed, then buys height back with speed. The total in the account never changes; friction is the bank charge.',
+  remember:'FOLLOW THE ENERGY. Where did it start, where did it go? Nothing vanishes — missing energy became heat.',
+  tryThis:'Rub your palms together hard for five seconds. That warmth is the exact energy your muscles just spent. Nothing was lost.'},
+
+'c4-momentum':{art:'collision',
+  what:['Momentum is mass times speed — how hard something is to stop.',
+        'In any crash, the total momentum before equals the total after.',
+        'To reduce the force in a crash, make the crash last longer. That is all airbags do.'],
+  analogy:'Catching a cricket ball, you pull your hands back. Same ball, same speed, same momentum to remove — but spread over more time, so less force on your fingers.',
+  remember:'Same change, more time, less force. That one sentence explains airbags, crumple zones, crash mats and bending your knees.',
+  tryThis:'Drop an egg on a pillow and on a plate. Same fall, same momentum. Only the stopping time changed.'},
+
+'c4-shm':{art:'spring',
+  what:['Some things bounce back harder the further you push them: springs, pendulums, guitar strings.',
+        'That single rule forces a smooth back-and-forth wobble that repeats perfectly.',
+        'Fastest in the middle, momentarily still at the ends.'],
+  analogy:'A child on a swing: pushed back hardest at the extremes, moving fastest at the bottom, and the timing stays the same whether they swing big or small.',
+  remember:'Stiffer spring or lighter mass → faster wobble. For a pendulum only the LENGTH matters — not the weight, not the swing size.',
+  tryThis:'Time 10 swings of your keys on a string. Now do it with a heavier bunch, same string length. Same time. Surprising, and it is why pendulum clocks work.'},
+
+'c5-waves':{art:'wave',
+  what:['A wave moves energy without moving stuff along with it.',
+        'Wavelength is the gap between crests, frequency is how many pass per second, and speed is those two multiplied.',
+        'Change the material and the speed changes — which is why light bends when it enters water.'],
+  analogy:'A stadium Mexican wave travels round the ground, but nobody changes seat. The pattern moves; the people just stand and sit.',
+  remember:'v = f λ. Long wavelength and low pitch go together; short and high go together. Same speed, sharing the same road.',
+  tryThis:'Put a straw in a glass of water and look from the side. It looks broken. That bend is a speed change, nothing more.'},
+
+'c5-super':{art:'standing',
+  what:['When two waves overlap, they simply add up.',
+        'Crest on crest makes a bigger crest. Crest on trough cancels to nothing.',
+        'Reflect a wave back on itself and you get fixed dead points and fixed loud points — a standing wave. That is every musical instrument.'],
+  analogy:'Two people wobbling one rope from both ends. Some spots go wild, other spots never move at all. The still spots are nodes.',
+  remember:'Whole number of wavelengths apart → loud. Half a wavelength out of step → silence.',
+  tryThis:'Hum into a bottle and then add water. The pitch rises because you shortened the air column, changing which standing wave fits.'},
+
+'c5-doppler':{art:'doppler',
+  what:['If a sound source moves toward you, the waves bunch up and the pitch rises.',
+        'Moving away, they stretch out and the pitch drops.',
+        'The pitch does not slide down as it approaches — it drops suddenly at the moment it passes.'],
+  analogy:'An ambulance siren: neeeee as it comes, nawwww as it goes. You have heard this law thousands of times before you had a name for it.',
+  remember:'Coming = crowded = higher. Going = gaping = lower.',
+  tryThis:'Next siren you hear, close your eyes and call out the exact moment it passes you. The pitch drop tells you, not your eyes.'},
+
+'c5-optics':{art:'lens',
+  what:['A lens bends light. A fat middle (convex) brings rays together to a point.',
+        'Where the image forms depends only on how far the object is compared to the focal length.',
+        'Far object → small upside-down image. Very close object → big right-way-up image, which is a magnifying glass.'],
+  analogy:'Your eye lens does this constantly, squeezing to focus near and relaxing to focus far. Glasses just pre-bend the light so your tired lens does not have to.',
+  remember:'Beyond 2F: small and flipped. Between F and 2F: big and flipped. Inside F: big and upright.',
+  tryThis:'Hold a magnifying glass close to text — big and upright. Move it further away — the text suddenly flips upside down. You just crossed the focal point.'},
+
+'c6-heat':{art:'heat',
+  what:['Temperature tells you how fast the particles jiggle on average.',
+        'Heat is energy moving from the hotter thing to the colder thing. It only goes that way.',
+        'Melting and boiling take huge energy without changing the temperature at all.'],
+  analogy:'A spark at 1000°C cannot hurt you, but 40°C bathwater can scald. Temperature is speed per particle; energy also depends on how many particles there are.',
+  remember:'CHANGING TEMPERATURE uses mcΔT. CHANGING STATE uses mL and the thermometer stops moving.',
+  tryThis:'Put a thermometer in melting ice water and stir. It sits at 0°C for ages even in a warm room — all the energy is going into melting, not heating.'},
+
+'c6-gas':{art:'gas',
+  what:['A gas is countless tiny particles flying about and bouncing off the walls.',
+        'Pressure is just those endless little hits added up.',
+        'Squeeze the box or heat the gas and the hits get more frequent or harder — pressure rises.'],
+  analogy:'Imagine popcorn in a pan. Turn up the heat and the kernels hit the lid faster and harder. That is temperature raising pressure.',
+  remember:'Squeeze → pressure up. Heat → pressure up. Always convert temperature to kelvin first, or every answer is wrong.',
+  tryThis:'Press your thumb over a bicycle pump outlet and push. The harder you squeeze the air into less space, the harder it pushes back.'},
+
+'c6-thermo':{art:'thermo',
+  what:['Add heat to a gas and it either gets hotter or does work by pushing something. Usually both.',
+        'You can never turn all your heat into useful work. Some always leaks away.',
+        'Messiness (entropy) only ever increases, which is why time runs one way.'],
+  analogy:'Your phone gets warm while working. That warmth is energy that did nothing useful — the tax every machine pays and none escape.',
+  remember:'First law: you cannot win (energy is conserved). Second law: you cannot even break even (some always degrades).',
+  tryThis:'Feel the back of a fridge. It is hot. A fridge does not destroy heat, it moves heat out — which is why leaving the door open warms the kitchen.'},
+
+'c7-static':{art:'charge',
+  what:['Charge comes in two kinds. Same kinds push apart, opposite kinds pull together.',
+        'A charge fills the space around it with a field — an invisible "how hard would I push something here" map.',
+        'Voltage is how much energy each unit of charge carries.'],
+  analogy:'Rub a balloon on your hair and stick it to a wall. You just moved electrons by hand, and the pull is strong enough to beat the whole Earth\'s gravity on that balloon.',
+  remember:'Field = the push per charge. Voltage = the energy per charge. Field pushes, voltage pays.',
+  tryThis:'Rub a plastic comb on wool and hold it near a thin stream of tap water. The water bends. No contact, pure field.'},
+
+'c7-circuits':{art:'circuit',
+  what:['Current is charge flowing past a point — like litres per second in a pipe.',
+        'Voltage is the push driving it. Resistance is how much the pipe fights back.',
+        'One path (series): same current everywhere. Two paths (parallel): the current splits.'],
+  analogy:'Voltage is water pressure, current is flow rate, resistance is a narrow pipe. A thin long pipe passes less water; a thin long wire passes less current.',
+  remember:'V = IR. Series adds resistance. Parallel always gives LESS resistance than either branch, because you opened another door.',
+  tryThis:'Notice your house lights work independently. That is parallel wiring — one bulb dying does not kill the rest.'},
+
+'c7-cap':{art:'capacitor',
+  what:['A capacitor is two plates that store charge, like a tiny rechargeable bucket.',
+        'It fills up slowly through a resistor and can dump everything in a flash.',
+        'That is why cameras and defibrillators use one instead of a battery.'],
+  analogy:'A battery is a tap, steady but slow. A capacitor is a bucket you fill from the tap and then throw all at once.',
+  remember:'Time to fill = R × C. After that time it is 63% full; after five of them, it is done.',
+  tryThis:'Watch a camera flash recharge — that whine is the capacitor filling. It stores slowly and spends in milliseconds.'},
+
+'c8-magforce':{art:'magnet',
+  what:['Moving charge makes magnetism. A magnet is just countless aligned moving electrons.',
+        'A wire carrying current in a magnetic field gets pushed sideways — not along the field, sideways to it.',
+        'That sideways push, applied to a loop, spins it. That is every motor.'],
+  analogy:'Hold your left hand: first finger Field, second finger Current, thumb Motion. Three at right angles. It feels odd because the push really is sideways to both.',
+  remember:'FBI on your left hand: Field, "second" = current, thuMb = Motion.',
+  tryThis:'Look at any fan, drill or electric toothbrush. All of them are a coil being pushed sideways in a magnetic field, over and over.'},
+
+'c8-induction':{art:'induction',
+  what:['If a magnet moves near a coil, electricity appears in the coil. Nothing touches.',
+        'Only movement counts. Hold it still and the electricity vanishes instantly.',
+        'The induced current always fights the change causing it — nature refuses free lunches.'],
+  analogy:'Every power station on Earth is this trick: spin a magnet near coils with steam, water or wind. That is the entire electricity industry in one sentence.',
+  remember:'NO CHANGE, NO VOLTAGE. Faster change = bigger voltage.',
+  tryThis:'Search "magnet falling through copper pipe" and watch it drift down in slow motion. Copper is not magnetic — the induced currents are pushing back.'},
+
+'c8-em':{art:'em',
+  what:['A changing electric field makes a magnetic field, and vice versa. Together they run forever.',
+        'That pair travelling through space IS light — and radio, microwave, X-ray and everything between.',
+        'Shorter wavelength means more energy per packet, which is why X-rays are dangerous and radio is not.'],
+  analogy:'Radio, visible light and X-rays are the same substance at different sizes, like the same piano note played at different octaves.',
+  remember:'Radio → Micro → Infra → Visible → Ultra → X → Gamma. Left is safe and long, right is small and dangerous.',
+  tryThis:'Look at your microwave door: a metal mesh with holes. Light gets out (tiny waves) but microwaves cannot (12 cm waves). The door is a wavelength filter.'},
+
+'c9-quantum':{art:'photon',
+  what:['Light arrives in packets, not as a smooth stream.',
+        'A dim blue light can knock electrons out of a metal while a blazing red light cannot.',
+        'That makes no sense for waves and perfect sense for packets: one packet, one electron, and red packets are too weak.'],
+  analogy:'You cannot break a window with a thousand ping-pong balls, but one small stone does it. Energy per packet matters, not total energy.',
+  remember:'BRIGHTER = MORE electrons. BLUER = FASTER electrons. Never mix those two up.',
+  tryThis:'Solar panels stop working under certain infrared sources no matter how strong. Same rule — the packets are below threshold.'},
+
+'c9-atom':{art:'atom',
+  what:['An atom is a tiny heavy nucleus with electrons far outside — mostly empty space.',
+        'Electrons can only sit on fixed steps, never between them.',
+        'Dropping a step releases exactly one colour of light, so every element has its own barcode.'],
+  analogy:'Like a staircase, not a ramp. You can be on step 2 or step 3, never at 2.5. The jump size sets the colour.',
+  remember:'Bigger jump = bigger energy = bluer light. Each element has its own set of steps, so its own colours.',
+  tryThis:'Compare a sodium street lamp (orange) with a neon sign (red). Different elements, different steps, different colours — you are reading atoms with your eyes.'},
+
+'c9-nuclear':{art:'decay',
+  what:['Some nuclei are unstable and break apart at random moments.',
+        'You cannot predict one atom, but with billions the timing is perfectly reliable: half gone every half-life.',
+        'Three types: alpha (stopped by paper), beta (stopped by aluminium), gamma (needs thick lead).'],
+  analogy:'Like popcorn. You cannot say which kernel pops next, yet the pan reliably takes about three minutes. Randomness plus huge numbers equals precision.',
+  remember:'After 1 half-life ½ left, after 2 ¼, after 3 ⅛. Count half-lives, halve each time.',
+  tryThis:'Roll 50 dice, remove every six, repeat. Plot how many survive each round. That curve is radioactive decay, and you just did it with dice.'},
+
+'c9-rel':{art:'relativity',
+  what:['Light always travels at the same speed for everyone — even if you chase it.',
+        'To keep that true, moving clocks must run slow and moving objects must shorten.',
+        'It only becomes noticeable near light speed, which is why nobody noticed for 200 years.'],
+  analogy:'Fly around the world in a jet and you come back a few billionths of a second younger. Measured with atomic clocks, in 1971, and it worked exactly as predicted.',
+  remember:'Fast clock = slow tick. Fast ruler = short ruler. Both by the same factor.',
+  tryThis:'Your phone GPS corrects for this every second. Without the relativity correction, your map would drift about 10 km off in a single day.'}
+};
+
+/* Two brand-new starter chapters, with no equations at all. */
+const UNIT_0 = {
+  id:'u0', title:'Start Here', icon:'🌱',
+  blurb:'No formulas. What physics actually is, and how to study it so it sticks.',
+  bn_title:'এখান থেকে শুরু', bn_blurb:'কোনো সূত্র নেই। পদার্থবিজ্ঞান আসলে কী, আর কীভাবে পড়লে মনে থাকবে।',
+  chapters:[
+  { id:'c0-what', title:'What physics actually is', level:'foundation',
+    bn_title:'পদার্থবিজ্ঞান আসলে কী',
+    bn_summary:'কোনো অঙ্ক নেই। পদার্থবিজ্ঞান কী নিয়ে কাজ করে এবং কেন সূত্রগুলো ভয়ের কিছু নয়।',
+    bn_keyIdea:'পদার্থবিজ্ঞান হলো জিনিস কীভাবে চলে, ধাক্কা দেয়, গরম হয় আর আলো ছড়ায় তার নিয়ম। সূত্র মানে শুধু সংক্ষিপ্ত লেখা — প্রতিটি প্রতীকের পেছনে একটি সহজ ধারণা আছে যা আপনি এমনিতেই জানেন। প্রতিটি প্রশ্ন আসলে চারটির একটি: কত দ্রুত? কত জোরে? কত শক্তি? সময়ের সাথে কীভাবে বদলায়?',
+    summary:'No maths at all. What the subject covers, why the symbols exist, and the four questions physics keeps asking.',
+    sections:[
+      {h:'It is a set of habits, not a pile of facts',
+       body:`Physics has only a handful of real ideas. Motion, force, energy, waves, charge, heat. Everything in this course is one of those six wearing a different hat.<br><br>
+The formulas came <b>last</b>, not first. Someone watched something happen, described it in words, and only then squeezed the description into symbols so it could be checked. You are going to do it in that order too: picture it, describe it, and only then write it.`},
+      {h:'Why formulas look scary and are not',
+       body:`Take <span class="formula" style="display:inline">v = u + at</span>. Read it out loud as a sentence: "your new speed is your old speed plus however much you gained." That is all it says. Every equation in this course is a short English sentence in disguise, and each chapter will hand you the sentence before the symbols.`},
+      {h:'How this course is arranged',
+       body:`Each chapter starts with a plain explanation, a picture, an everyday comparison and a trick for remembering it. Then come the details, a worked example you reveal one step at a time, a simulation you can play with, and a short quiz.<br><br>
+You never have to finish a unit before moving on. But units 1 to 4 are the foundation everything else leans on, so resist jumping straight to black holes.`},
+      {h:'What to do when you are stuck',
+       body:`Three moves, in this order. <b>One:</b> draw the situation, even badly. <b>Two:</b> name what is pushing what. <b>Three:</b> ask the AI tutor (the 🧠 button) — it knows which chapter you are reading and works without any setup. Being stuck is not a signal you are bad at this; it is the normal middle part of learning something.`}
+    ],
+    formulas:[], example:null,
+    realWorld:['Every bridge, phone, engine, hospital scanner and weather forecast is applied physics.',
+      'The GPS in your pocket needs both Newton and Einstein to be correct to within a few metres.',
+      'Physics is the most transferable subject there is: it teaches you to model a messy situation with a few clean rules.'],
+    videos:[{t:'What is physics?', q:'what is physics introduction for beginners'},{t:'Physics in everyday life', q:'physics in everyday life examples'}],
+    terms:['model','quantity','estimate','experiment'] },
+
+  { id:'c0-learn', title:'How to learn this fast', level:'foundation',
+    bn_title:'দ্রুত শেখার উপায়',
+    bn_summary:'বারবার পড়া প্রায় কাজে দেয় না। মনে করার চেষ্টাই শেখায়। এখানে সেই পদ্ধতিই তৈরি করা আছে।',
+    bn_keyIdea:'বারবার পড়া আরামদায়ক কিন্তু প্রায় নিষ্ফল; বই বন্ধ করে মনে করার চেষ্টাই স্মৃতি গড়ে। তাই নিয়ম: একবার পড়ুন, সিমুলেশনে অনুমান করে দেখুন, তারপর মনে করে কুইজ দিন — আর কয়েকদিন পরপর রিভিশন করুন। দিনে ১৫ মিনিট নিয়মিত পড়া সপ্তাহে এক দিনের তিন ঘণ্টার চেয়ে অনেক ভালো, কারণ ফাঁকা সময়েই স্মৃতি শক্ত হয়।',
+    summary:'Re-reading barely works. Recalling does. Here is the loop this app is built around, and how to spend fifteen minutes a day.',
+    sections:[
+      {h:'The one rule that matters',
+       body:`Close the page and try to say what you just read. That single act — struggling to recall — builds memory several times faster than reading the same page again. It feels worse and works better. Every "reveal" button and quiz in this app exists to force that moment on you.`},
+      {h:'Spacing beats cramming',
+       body:`Learn something today and you forget most of it within a week — unless you meet it again just as it starts to fade. Then it lasts far longer, and the next gap can be wider.<br><br>
+The 🧠 review page does this bookkeeping for you: formulas from chapters you finish, and every quiz question you get wrong, come back after 1 day, then 3, then longer.`},
+      {h:'Mix, do not block',
+       body:`Doing twenty projectile questions in a row feels productive, but you stop reading the question — you already know which method to use. Mixing chapter types is harder in the moment and much better for exams, where nobody tells you which topic a question is from. The daily review deliberately shuffles.`},
+      {h:'Your fifteen minutes',
+       body:`<ul class="clean">
+<li><b>3 min</b> — clear anything the review page says is due.</li>
+<li><b>7 min</b> — read the simple part of one new chapter, then play with its simulation and predict before each slider move.</li>
+<li><b>3 min</b> — write two sentences in the recall box, from memory.</li>
+<li><b>2 min</b> — take the quiz. Wrong answers automatically become flashcards.</li></ul>
+Then stop, even if you feel like continuing. Coming back tomorrow matters more than going longer today.`},
+      {h:'Signs you are actually learning',
+       body:`You can explain it to someone who does not know physics. You can predict what the simulation will do before you move the slider. You can spot which chapter a random question belongs to. Feeling fluent while re-reading is <i>not</i> on that list — it is the most common illusion in studying.`}
+    ],
+    formulas:[], example:null,
+    realWorld:['Medical students, pilots and language learners all use spaced repetition for the same reason: it is the best-tested memory result in psychology.',
+      'Top exam performers do more practice questions and less re-reading than average performers — that is the main difference.',
+      'Sleep consolidates what you studied, so a short session before bed is unusually effective.'],
+    videos:[{t:'How to study effectively', q:'active recall spaced repetition study technique'},{t:'Why re-reading fails', q:'why rereading does not work learning science'}],
+    terms:['active recall','spaced repetition','interleaving','self-explanation'] }
+]};
+
+/* Put Start Here at the front of the course and reindex. */
+PHYSICS.units.unshift(UNIT_0);
+ALL_CHAPTERS.length = 0;
+SUBJECTS.forEach(s => s.units.forEach(u => u.chapters.forEach(c => {
+  c._unit = u; c._subject = s;
+  c.simple = SIMPLE[c.id] || null;
+  ALL_CHAPTERS.push(c);
+})));

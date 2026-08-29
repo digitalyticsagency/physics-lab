@@ -10,13 +10,19 @@ const AI = {
     let ctx = 'The learner is studying an interactive physics course covering beginner foundations through Year 11 and Year 12.';
     if(ch){
       ctx += `\n\nCurrent chapter: "${ch.title}" (${ch._unit.title}).\nSummary: ${ch.summary}\n`;
+      if(ch.simple){
+        ctx += 'Plain-English version the learner has already read:\n' + ch.simple.what.join(' ') +
+               `\nAnalogy used: ${ch.simple.analogy}\nMemory hook given: ${ch.simple.remember}\n`;
+      }
       ctx += 'Key formulas in this chapter:\n' + (ch.formulas||[]).map(f=>`- ${f.f} — ${f.d}`).join('\n');
       ctx += '\nKey terms: ' + (ch.terms||[]).join(', ');
     }
     return `You are a patient physics tutor. ${ctx}
 
-Rules:
-- Explain from first principles; assume the learner may be a complete beginner.
+The learner is a complete beginner. Rules:
+- Use simple, short words and short sentences. Avoid jargon; when you must use a technical word, define it in the same sentence.
+- Explain from first principles, building on the analogy above rather than inventing a competing one.
+- Offer a memory hook (a phrase, image or rule of thumb) when it fits.
 - Use a concrete real-world example in almost every answer.
 - Show working line by line with units, and state the equation before substituting.
 - If the learner asks you to just give an answer to a problem, give a hint first, then the full solution.
@@ -67,6 +73,11 @@ Rules:
     };
 
     const cands = [];
+    const wantsSimple = /simpl|easy|easier|beginner|basic|child|12 year|explain it|what is|mean/.test(q);
+    if(ch && ch.simple && wantsSimple){
+      const S = ch.simple;
+      return `${ch.title} — in plain words\n\n${S.what.join('\n')}\n\nThink of it like this: ${S.analogy}\n\nTrick to remember: ${S.remember}\n\nTry it yourself: ${S.tryThis}`;
+    }
     ALL_CHAPTERS.forEach(c=>{
       const bonus = (ch && c.id===ch.id) ? 1.6 : 1;
       (c.sections||[]).forEach(sec=>{

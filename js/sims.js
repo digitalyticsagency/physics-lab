@@ -411,7 +411,6 @@ superposition:{
     const rows=[[110,'wave 1',C.acc()],[210,'wave 2',C.acc2()],[350,'resultant',C.warn()]];
     rows.forEach(([y,lab,c])=>{ line(ctx,0,y,W,y,C.line(),1); text(ctx,lab,10,y-52,C.muted(),12); });
     ctx.lineWidth=2;
-    for(const [y,,c,] of [[110,0,C.acc()],[210,0,C.acc2()],[350,0,C.warn()]]) {}
     const f1=x=>p.A1*Math.sin(k*x-w*s.t), f2=x=>p.A2*Math.sin(k*x+sgn*w2*s.t);
     [[110,f1,C.acc()],[210,f2,C.acc2()],[350,x=>f1(x)+f2(x),C.warn()]].forEach(([y,fn,c])=>{
       ctx.strokeStyle=c; ctx.beginPath();
@@ -459,7 +458,7 @@ doppler:{
 
 lens:{
   title:'Converging Lens Ray Diagram',
-  desc:'Drag the object distance across the focal point and watch the image flip from real and inverted to virtual and upright. The three construction rays are drawn for you.',
+  desc:'Move the object across the focal point and watch the image flip from real and inverted to virtual and upright. The three construction rays are drawn for you.',
   params:[P('f','Focal length',40,200,5,100,'px'),P('u','Object distance',30,400,5,250,'px'),P('ho','Object height',20,90,5,60,'px')],
   init:()=>({}),
   step:()=>{},
@@ -470,36 +469,49 @@ lens:{
     ctx.strokeStyle=C.acc(); ctx.lineWidth=3;
     ctx.beginPath(); ctx.ellipse(cx,ax,14,110,0,0,7); ctx.stroke();
     [[-1,'F'],[1,"F'"],[-2,'2F'],[2,"2F'"]].forEach(([m,l])=>{
-      const x=cx+m*p.f*(Math.abs(m)===2?0.5*2:1)/(Math.abs(m)===2?1:1);
-      const xx=cx+ (Math.abs(m)===2? Math.sign(m)*2*p.f : m*p.f);
-      circle(ctx,xx,ax,4,C.muted()); text(ctx,l,xx,ax+20,C.muted(),12,'center');
+      const xx = cx + m*p.f;
+      if(xx>4 && xx<W-4){ circle(ctx,xx,ax,4,C.muted()); text(ctx,l,xx,ax+20,C.muted(),12,'center'); }
     });
     const ox=cx-p.u, oy=ax-p.ho;
     arrow(ctx,ox,ax,0,-p.ho,C.acc2(),3);
+    text(ctx,'object',ox,ax+22,C.acc2(),12,'center');
+
+    const atFocus = Math.abs(p.u-p.f) < 3;
+    if(atFocus){
+      line(ctx,ox,oy,cx,oy,C.warn(),1.5); line(ctx,cx,oy,W,oy,C.warn(),1.5);
+      text(ctx,'object at F → rays leave parallel → image at infinity',cx,40,C.warn(),13,'center');
+      return;
+    }
     const v = 1/(1/p.f - 1/p.u);
     const virtual = p.u < p.f;
-    const ix = cx + (virtual? v : v), hi = -p.ho*(v/p.u);
-    // ray 1: parallel then through focus
+    const ix = cx + v, hi = -p.ho*(v/p.u);
+
+    // ray 1: parallel in, through the far focus after the lens
     line(ctx,ox,oy,cx,oy,C.warn(),1.5);
-    if(!virtual) line(ctx,cx,oy,cx+ (ix-cx)*1.6, oy + (ax+hi-oy)*1.6, C.warn(),1.5);
-    else { line(ctx,cx,oy,W,oy+(ax+ (0-oy))*0,C.warn(),1.5);
-           ctx.setLineDash([4,4]); line(ctx,cx,oy,ix,ax+hi,C.warn(),1.2); ctx.setLineDash([]); }
-    // ray 2: through centre
-    line(ctx,ox,oy,cx+(cx-ox)*1.8, ax+(ax-oy)*1.8, C.good(),1.5);
+    const slope1 = (ax-oy)/p.f;
+    line(ctx,cx,oy,W,oy+slope1*(W-cx),C.warn(),1.5);
+    if(virtual){ ctx.setLineDash([5,4]); line(ctx,cx,oy,0,oy-slope1*cx,C.warn(),1.2); ctx.setLineDash([]); }
+
+    // ray 2: straight through the optical centre
+    const slope2 = (ax-oy)/p.u;
+    line(ctx,ox,oy,W,oy+slope2*(W-ox),C.good(),1.5);
+    if(virtual){ ctx.setLineDash([5,4]); line(ctx,ox,oy,0,oy-slope2*ox,C.good(),1.2); ctx.setLineDash([]); }
+
     // image
-    if(isFinite(v) && Math.abs(v)<900){
-      const dash = virtual;
-      if(dash) ctx.setLineDash([5,4]);
-      arrow(ctx, ix, ax, 0, hi, C.acc(),3);
+    if(isFinite(v) && Math.abs(ix-cx)<W/2){
+      if(virtual) ctx.setLineDash([6,4]);
+      arrow(ctx, ix, ax, 0, hi, C.acc(), 3);
       ctx.setLineDash([]);
-      text(ctx, virtual?'virtual, upright, magnified':'real, inverted', ix, ax+ (hi>0? 30:-8) + (hi>0?0:-hi*0), C.acc(),12,'center');
+      text(ctx, virtual?'virtual · upright · magnified':'real · inverted',
+           ix, hi<0? ax+hi-10 : ax+hi+18, C.acc(),12,'center');
     }
-    text(ctx,'object',ox,ax+22,C.acc2(),12,'center');
   },
   read(s,p){
+    if(Math.abs(p.u-p.f)<3) return [['u',p.u+' px'],['v','∞'],['magnification','∞'],['image','at infinity']];
     const v=1/(1/p.f-1/p.u), m=-v/p.u;
-    return [['u',p.u+' px'],['v',isFinite(v)?v.toFixed(1)+' px':'∞'],
-            ['magnification',m.toFixed(2)],['image',p.u<p.f?'virtual upright':'real inverted']];
+    return [['u',p.u+' px'],['v',v.toFixed(1)+' px'],
+            ['magnification',m.toFixed(2)],['image',p.u<p.f?'virtual upright':'real inverted'],
+            ['power',(1000/p.f).toFixed(1)+' D (if px were mm)']];
   }
 },
 

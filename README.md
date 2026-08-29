@@ -13,7 +13,22 @@ No build step, no dependencies, no account. Open `index.html` and start.
 | **121 quiz questions** | every answer explained, right or wrong |
 | **3 games** | target practice, formula rush, graph detective |
 | **AI tutor** | knows which chapter you're on; works with zero setup, or with your own API key |
+| **Spaced repetition** | formulas, cloze drills and every quiz question you missed come back on a widening schedule |
+| **বাংলা / English** | one-click toggle for the interface, chapter titles, summaries and a Bangla key-idea box |
 | **Progress tracking** | stored locally in your browser, nothing sent anywhere |
+
+## Built to be remembered, not just read
+
+The learning design is deliberate — these are the techniques with the strongest evidence behind them:
+
+- **Retrieval before revelation.** Worked-example steps stay hidden until you ask for them, one at a time. Attempting first (and failing) encodes far better than reading a finished solution.
+- **Self-explanation.** A recall box sits before every quiz: write the chapter back in your own words. All of them collect in **My Notes** — the most useful revision material you own, because you wrote it.
+- **Spaced repetition (SM-2).** Marking a chapter *understood* unlocks its formulas as flashcards. Grade yourself Again / Hard / Good / Easy and cards return after 1 day, 3 days, then ever-wider gaps. Anything you miss comes back tomorrow.
+- **Cloze deletion.** Formula cards also appear with one symbol blanked out, so you reconstruct the equation instead of recognising it.
+- **Error-driven review.** Every quiz question you get wrong is queued into the deck automatically and stays until you get it right.
+- **Interleaving.** The daily review mixes chapters and card types rather than blocking by topic — harder in the moment, much better for transfer.
+- **Prediction.** Simulations invite you to predict before moving a slider; a surprising result is a misconception being corrected.
+- **Streaks.** A day counter for consistency, not a leaderboard.
 
 ### Course map
 
@@ -49,6 +64,10 @@ Two modes:
 
 - **Offline coach** (default, no setup) — ranked retrieval over the course's own sections, formulas and worked examples. Ask "explain terminal velocity" or "centripetal force formula" and it finds and quotes the right passage.
 - **Live tutoring** — click ⚙️ in the tutor panel and paste your own [Anthropic API key](https://console.anthropic.com/). The key is stored in your browser's localStorage on your device only and is sent directly to Anthropic's API, never to any other server. The tutor is given the current chapter's summary, formulas and key terms as context.
+
+## Bangla mode
+
+The **বাং / EN** button in the header switches the whole interface, unit and chapter titles, summaries, and adds a **মূল কথা** (key idea) box written in Bangla for all 30 chapters. Detailed explanations, worked examples and quizzes stay in English on purpose, so exam vocabulary stays familiar. Bangla strings live in `js/data/i18n.js` (`UI.bn`, `BN_UNITS`, `BN_CH`) — adding another language means adding one more block there.
 
 ## Adding another subject
 
@@ -87,6 +106,8 @@ js/
   data/quiz.js      question bank keyed by chapter id
   sims.js           20 simulations + tiny canvas helper library
   games.js          3 games
+  data/i18n.js      Bangla/English strings and per-chapter translations
+  memory.js         spaced repetition, cloze cards, recall box, notes, streak
   ai.js             tutor: live API mode + offline retrieval coach
   app.js            router, rendering, progress, sim mounting
 ```

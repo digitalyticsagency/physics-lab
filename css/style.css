@@ -150,3 +150,13 @@ table.data th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform
 }
 .footer-nav{display:flex;justify-content:space-between;gap:.5rem;margin-top:2rem;
   border-top:1px solid var(--line);padding-top:1rem}
+
+/* language + review additions */
+[lang="bn"] body, body[data-lang="bn"]{ font-family:'Noto Sans Bengali','Hind Siliguri',var(--sans); }
+.sidebar-foot a{ display:flex; align-items:center; gap:.4rem; }
+#duePill{ text-decoration:none; }
+#duePill:hover{ border-color:var(--accent); color:var(--ink); }
+.opts .opt{ transition:border-color .12s ease; }
+textarea:focus, input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+ol{ padding-left:1.2rem; }
+ol li{ margin:.35rem 0; }

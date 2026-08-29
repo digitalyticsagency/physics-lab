@@ -1,49 +1,73 @@
-/* App shell: routing, rendering, progress, sim mounting. */
+/* App shell: routing, rendering, progress, sim mounting, language. */
 const $ = s => document.querySelector(s);
 const el = (t,c,h)=>{ const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e; };
 const store = {
   get(){ try{ return JSON.parse(localStorage.getItem('pl_progress')||'{}'); }catch(e){ return {}; } },
   set(v){ localStorage.setItem('pl_progress', JSON.stringify(v)); }
 };
-let CURRENT = null;      // current chapter object
-let simLoop = null;      // active animation frame id
+let CURRENT = null;
+let simLoop = null;
+let simGen = 0;          // generation token so old loops cannot survive a route change
 
 /* ---------- progress ---------- */
-function markRead(id){ const p=store.get(); p[id]=p[id]||{}; p[id].read=true; store.set(p); renderNav(); updateGlobal(); }
-function saveQuiz(id, correct, total){ const p=store.get(); p[id]=p[id]||{}; p[id].quiz={correct,total,at:Date.now()}; store.set(p); renderNav(); updateGlobal(); }
-function chapterDone(id){ const r=store.get()[id]; return !!(r && r.read && r.quiz && r.quiz.correct/r.quiz.total>=0.6); }
+function markUnderstood(id){
+  const p = store.get(); p[id] = p[id]||{}; p[id].read = true; p[id].at = Date.now();
+  store.set(p); STREAK.touch(); renderNav($('#searchBox').value); updateGlobal();
+}
+function saveQuiz(id, correct, total){
+  const p = store.get(); p[id] = p[id]||{}; p[id].quiz = {correct,total,at:Date.now()};
+  store.set(p); STREAK.touch(); renderNav($('#searchBox').value); updateGlobal();
+}
+function chapterDone(id){ const r = store.get()[id]; return !!(r && r.read && r.quiz && r.quiz.correct/r.quiz.total >= 0.6); }
 function updateGlobal(){
   const done = ALL_CHAPTERS.filter(c=>chapterDone(c.id)).length;
   $('#globalProgress').textContent = Math.round(done/ALL_CHAPTERS.length*100)+'%';
+  const due = SRS.due().length;
+  const pill = $('#duePill');
+  pill.textContent = '🧠 ' + due;
+  pill.style.opacity = due ? 1 : .45;
 }
 
 /* ---------- navigation ---------- */
 function renderNav(filter=''){
   const tree = $('#navTree'); tree.innerHTML='';
-  const f = filter.trim().toLowerCase();
+  const f = (filter||'').trim().toLowerCase();
   SUBJECTS.forEach(sub => sub.units.forEach(u => {
     const matches = u.chapters.filter(c => !f ||
-      (c.title+' '+c.summary+' '+(c.terms||[]).join(' ')+' '+(c.formulas||[]).map(x=>x.f).join(' ')).toLowerCase().includes(f));
+      (c.title+' '+(c.bn_title||'')+' '+c.summary+' '+(c.bn_summary||'')+' '+(c.terms||[]).join(' ')+' '+
+       (c.formulas||[]).map(x=>x.f).join(' ')).toLowerCase().includes(f));
     if(!matches.length) return;
-    const box = el('div','nav-unit'+(f||(CURRENT && CURRENT._unit.id===u.id)?' open':''));
-    const btn = el('button',null,`<span>${u.icon}</span><span>${u.title}</span>`);
+    const open = f || (CURRENT && CURRENT._unit.id===u.id);
+    const box = el('div','nav-unit'+(open?' open':''));
+    const btn = el('button',null,`<span>${u.icon}</span><span>${tr(u,'title')}</span>`);
     btn.onclick = ()=> box.classList.toggle('open');
     box.appendChild(btn);
     const kids = el('div','kids');
     matches.forEach(c=>{
       const a = el('a','nav-ch'+(CURRENT&&CURRENT.id===c.id?' active':'')+(chapterDone(c.id)?' done':''),
-        `<span class="dot"></span><span>${c.title}</span>`);
+        `<span class="dot"></span><span>${tr(c,'title')}</span>`);
       a.href = '#/c/'+c.id;
       kids.appendChild(a);
     });
     box.appendChild(kids);
     tree.appendChild(box);
   }));
+  const foot = $('#sidebarFoot');
+  const due = SRS.due().length;
+  foot.innerHTML = `
+    <a href="#/review">${t('review')} ${due?`<span class="tag" style="margin-left:auto">${due}</span>`:''}</a>
+    <a href="#/lab">${t('lab')}</a>
+    <a href="#/games">${t('games')}</a>
+    <a href="#/formulas">${t('formulas')}</a>
+    <a href="#/notes">${t('notes')}</a>
+    <a href="#/progress">${t('progress')}</a>`;
+  $('#searchBox').placeholder = t('search');
 }
 
 /* ---------- simulation mounting ---------- */
 function mountSim(container, simId){
   const sim = SIMS[simId]; if(!sim) return;
+  const gen = ++simGen;
   const params = {}; (sim.params||[]).forEach(p=>params[p.k]=p.def);
   const wrap = el('div','sim-wrap');
   const left = el('div');
@@ -70,9 +94,9 @@ function mountSim(container, simId){
   });
 
   const row = el('div','row');
-  const play = el('button','btn small','⏸ Pause');
-  play.onclick = ()=>{ playing=!playing; play.textContent = playing?'⏸ Pause':'▶ Play'; };
-  const reset = el('button','btn small ghost','↺ Reset');
+  const play = el('button','btn small','⏸');
+  play.onclick = ()=>{ playing=!playing; play.textContent = playing?'⏸':'▶'; };
+  const reset = el('button','btn small ghost','↺');
   reset.onclick = ()=>{ state = sim.init?sim.init(params):{}; };
   row.appendChild(play); row.appendChild(reset);
   (sim.buttons||[]).forEach(b=>{
@@ -84,15 +108,15 @@ function mountSim(container, simId){
   const ro = el('div','readouts'); ctrls.appendChild(ro);
 
   function frame(now){
+    if(gen !== simGen) return;                 // a newer sim owns the screen
     const dt = Math.min(0.05,(now-last)/1000); last=now;
     if(playing && sim.step) sim.step(state, dt, params);
     sim.draw(ctx, state, params, 800, 450);
     const rows = sim.read ? sim.read(state, params) : null;
-    if(rows) ro.innerHTML = rows.map(r=>`<div><span>${r[0]}</span> = ${r[1]}</div>`).join('');
+    if(rows && rows.length) ro.innerHTML = rows.map(r=>`<div><span>${r[0]}</span> = ${r[1]}</div>`).join('');
     else ro.style.display='none';
     simLoop = requestAnimationFrame(frame);
   }
-  cancelAnimationFrame(simLoop);
   simLoop = requestAnimationFrame(frame);
 }
 
@@ -101,7 +125,7 @@ function mountQuiz(container, chId){
   const qs = QUIZ[chId]; if(!qs) return;
   let correct = 0, answered = 0;
   const head = el('div','row');
-  head.innerHTML = `<span class="tag">${qs.length} questions</span><span class="tag" id="qScore">0 / ${qs.length}</span>`;
+  head.innerHTML = `<span class="tag">${qs.length} ${t('quizQuestions')}</span><span class="tag" id="qScore">0 / ${qs.length}</span>`;
   container.appendChild(head);
   qs.forEach((q,i)=>{
     const box = el('div','q');
@@ -113,14 +137,15 @@ function mountQuiz(container, chId){
         if(box.dataset.done) return;
         box.dataset.done = '1'; answered++;
         opts.querySelectorAll('.opt')[q.a].classList.add('correct');
-        if(j===q.a) correct++; else b.classList.add('wrong');
-        box.appendChild(el('div','explain', q.e));
+        if(j===q.a){ correct++; SRS.clearWrong(chId,i); }
+        else { b.classList.add('wrong'); SRS.markWrong(chId,i); }
+        box.appendChild(el('div','explain', q.e + (j===q.a?'':` — <i>${t('addedToDeck')}</i>`)));
         $('#qScore').textContent = `${correct} / ${qs.length}`;
         if(answered===qs.length){
           saveQuiz(chId, correct, qs.length);
-          const msg = correct/qs.length>=0.6 ? '✅ Chapter passed — it now shows green in the sidebar.'
-                                             : '↺ Below 60%. Re-read the sections above and try again.';
-          container.appendChild(el('div','callout', `<div class="lbl">Result</div>${correct} out of ${qs.length}. ${msg}`));
+          const pass = correct/qs.length >= 0.6;
+          container.appendChild(el('div','callout',
+            `<div class="lbl">${t('result')}</div>${correct} / ${qs.length}. ${pass?t('passed'):t('failed')}`));
         }
       };
       opts.appendChild(b);
@@ -134,114 +159,155 @@ function mountQuiz(container, chId){
 function viewHome(){
   const v = $('#view');
   const done = ALL_CHAPTERS.filter(c=>chapterDone(c.id)).length;
+  const due = SRS.due().length, streak = STREAK.get().count;
   v.innerHTML = `
-    <div class="crumb">Interactive course</div>
-    <h1>Learn physics from the very beginning</h1>
-    <p class="lede">${PHYSICS.tagline} Every chapter has explanations written for someone starting from zero, a worked example, real-world uses, a live simulation you can play with, and a quiz that unlocks your progress.</p>
+    <div class="crumb">${PHYSICS.icon} ${LANG.get()==='bn'?'ইন্টারঅ্যাকটিভ কোর্স':'Interactive course'}</div>
+    <h1>${LANG.get()==='bn'?'একদম শুরু থেকে পদার্থবিজ্ঞান শিখুন':'Learn physics from the very beginning'}</h1>
+    <p class="lede">${LANG.get()==='bn'
+      ? 'শূন্য থেকে শুরু করে একাদশ ও দ্বাদশ শ্রেণির পুরো পদার্থবিজ্ঞান। প্রতিটি অধ্যায়ে সহজ ব্যাখ্যা, সমাধান করা উদাহরণ, বাস্তব ব্যবহার, চালিয়ে দেখার মতো সিমুলেশন এবং কুইজ আছে — সাথে ভুলে না যাওয়ার জন্য ব্যবধানযুক্ত রিভিশন।'
+      : PHYSICS.tagline + ' Every chapter has a plain-language explanation, a worked example you reveal step by step, real-world uses, a live simulation and a quiz — plus spaced review so it actually stays in your head.'}</p>
     <div class="row" style="margin:1rem 0">
-      <a class="btn" href="#/c/${ALL_CHAPTERS[0].id}">Start chapter 1</a>
-      <a class="btn ghost" href="#/lab">Open the simulation lab</a>
-      <a class="btn ghost" href="#/games">Play a game</a>
+      <a class="btn" href="#/c/${ALL_CHAPTERS[0].id}">${t('startCh1')}</a>
+      ${due?`<a class="btn" href="#/review">${t('reviewNow')} (${due})</a>`:''}
+      <a class="btn ghost" href="#/lab">${t('openLab')}</a>
+      <a class="btn ghost" href="#/games">${t('playGame')}</a>
     </div>
-    <div class="card"><div class="row" style="justify-content:space-between"><b>Your progress</b><span>${done} / ${ALL_CHAPTERS.length} chapters</span></div>
+    <div class="card"><div class="row" style="justify-content:space-between">
+      <b>${t('yourProgress')}</b>
+      <span>${done} / ${ALL_CHAPTERS.length} ${t('chapters')} · 🔥 ${streak} ${t('streak')}</span></div>
       <div class="bar" style="margin-top:.5rem"><i style="width:${done/ALL_CHAPTERS.length*100}%"></i></div></div>
-    <h2>The course</h2>
+    <h2>${t('theCourse')}</h2>
     <div class="grid cols-3">
       ${PHYSICS.units.map(u=>`<a class="card" href="#/c/${u.chapters[0].id}" style="color:inherit">
-        <div style="font-size:1.6rem">${u.icon}</div><b>${u.title}</b>
-        <p class="lede" style="font-size:.88rem">${u.blurb}</p>
-        <span class="tag">${u.chapters.length} chapters</span></a>`).join('')}
+        <div style="font-size:1.6rem">${u.icon}</div><b>${tr(u,'title')}</b>
+        <p class="lede" style="font-size:.88rem">${tr(u,'blurb')}</p>
+        <span class="tag">${u.chapters.length} ${t('chapters')}</span></a>`).join('')}
     </div>
-    <h2>How to use this</h2>
+    <h2>${LANG.get()==='bn'?'কীভাবে পড়লে মনে থাকবে':'How to make it stick'}</h2>
     <div class="grid cols-2">
-      <div class="card"><b>1 · Read, then play</b><p>Read the sections, then use the simulation at the bottom of the chapter. Change one slider at a time and predict what will happen before you move it — that prediction step is where the learning actually happens.</p></div>
-      <div class="card"><b>2 · Take the quiz</b><p>Score 60% or more and the chapter turns green. Explanations appear after every answer, right or wrong.</p></div>
-      <div class="card"><b>3 · Ask the tutor</b><p>The 🧠 button opens an AI tutor that knows which chapter you are on. It works without any setup in offline coach mode, and becomes a full conversational tutor if you add your own Anthropic API key.</p></div>
-      <div class="card"><b>4 · Keep going</b><p>Nothing is locked. Jump to relativity on day one if you like — but Units 1–4 are the foundation everything else leans on.</p></div>
+      <div class="card"><b>1 · ${LANG.get()==='bn'?'আগে অনুমান, পরে উত্তর':'Predict, then reveal'}</b><p>${LANG.get()==='bn'
+        ?'উদাহরণের ধাপগুলো লুকানো থাকে। নিজে চেষ্টা করে তারপর ধাপ খুলুন — আগে চেষ্টা করে ভুল করলে স্মৃতি অনেক পোক্ত হয়।'
+        :'Worked-example steps stay hidden until you ask for them. Attempting first — even failing — builds far stronger memory than reading a finished solution.'}</p></div>
+      <div class="card"><b>2 · ${LANG.get()==='bn'?'নিজের ভাষায় বলুন':'Say it in your own words'}</b><p>${LANG.get()==='bn'
+        ?'কুইজের আগে ছোট বাক্সে অধ্যায়টি নিজের ভাষায় লিখুন। এই স্ব-ব্যাখ্যাই বোঝা আর মুখস্থের পার্থক্য গড়ে দেয়।'
+        :'A recall box sits before every quiz. Explaining a chapter back to yourself is what separates understanding from recognition.'}</p></div>
+      <div class="card"><b>3 · ${LANG.get()==='bn'?'ব্যবধানযুক্ত রিভিশন':'Spaced review'}</b><p>${LANG.get()==='bn'
+        ?'বোঝা হয়েছে চিহ্নিত অধ্যায়ের সূত্র ও ভুল করা প্রশ্ন ফ্ল্যাশকার্ডে চলে যায় এবং ১ দিন, ৩ দিন, তারপর ক্রমশ বাড়তে থাকা ব্যবধানে ফিরে আসে।'
+        :'Formulas from chapters you finish — and every quiz question you got wrong — become flashcards that return after 1 day, 3 days, then ever-wider gaps.'}</p></div>
+      <div class="card"><b>4 · ${LANG.get()==='bn'?'হাত দিয়ে দেখুন':'Touch the physics'}</b><p>${LANG.get()==='bn'
+        ?'স্লাইডার নাড়ানোর আগে ভাবুন কী হবে, তারপর নাড়ান। ভুল অনুমান ধরা পড়লেই ভুল ধারণা ভাঙে।'
+        :'Before moving a slider, predict what will happen, then move it. A surprised prediction is a misconception being corrected.'}</p></div>
     </div>`;
 }
 
 function viewChapter(id){
-  const ch = ALL_CHAPTERS.find(c=>c.id===id); if(!ch) return viewHome();
+  const ch = ALL_CHAPTERS.find(c=>c.id===id); if(!ch){ location.hash='#/'; return; }
   CURRENT = ch;
   const idx = ALL_CHAPTERS.indexOf(ch);
   const prev = ALL_CHAPTERS[idx-1], next = ALL_CHAPTERS[idx+1];
-  const levelTag = {foundation:'Beginner foundation', y11:'Year 11', y12:'Year 12'}[ch.level]||ch.level;
+  const levelTag = {foundation:t('beginner'), y11:t('y11'), y12:t('y12')}[ch.level]||ch.level;
+  const read = (store.get()[ch.id]||{}).read;
   const v = $('#view');
   v.innerHTML = `
-    <div class="crumb">${ch._unit.icon} ${ch._unit.title}</div>
-    <h1>${ch.title}</h1>
-    <div class="row"><span class="tag">${levelTag}</span>${ch.sim?'<span class="tag">interactive sim</span>':''}<span class="tag">${(QUIZ[ch.id]||[]).length} quiz questions</span></div>
-    <p class="lede">${ch.summary}</p>
+    <div class="crumb">${ch._unit.icon} ${tr(ch._unit,'title')}</div>
+    <h1>${tr(ch,'title')}</h1>
+    <div class="row"><span class="tag">${levelTag}</span>${ch.sim?`<span class="tag">${t('interactiveSim')}</span>`:''}<span class="tag">${(QUIZ[ch.id]||[]).length} ${t('quizQuestions')}</span></div>
+    <p class="lede">${tr(ch,'summary')}</p>
+    ${LANG.get()==='bn' && ch.bn_keyIdea ? `<div class="callout"><div class="lbl">${t('keyIdea')}</div>${ch.bn_keyIdea}</div>
+      <p class="hint">${t('bnNote')}</p>` : ''}
     ${ch.sections.map(s=>`<h2>${s.h}</h2><div>${s.body}</div>`).join('')}
-    <h2>Formulas to know</h2>
+    <h2>${t('formulasToKnow')}</h2>
     ${ch.formulas.map(f=>`<div class="formula"><b>${f.f}</b>   —   ${f.d}</div>`).join('')}
-    <h2>Worked example — ${ch.example.title}</h2>
-    <div class="card"><p><b>Problem.</b> ${ch.example.problem}</p>
-      <ol>${ch.example.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>
-    <h2>Where this shows up in the real world</h2>
+    <h2>${t('workedExample')} — ${ch.example.title}</h2>
+    <div id="exHost"></div>
+    <h2>${t('realWorld')}</h2>
     <ul class="clean">${ch.realWorld.map(r=>`<li>${r}</li>`).join('')}</ul>
-    ${ch.sim?`<h2>Try it — ${SIMS[ch.sim]?SIMS[ch.sim].title:''}</h2>
+    ${ch.sim?`<h2>${t('tryIt')} — ${SIMS[ch.sim]?SIMS[ch.sim].title:''}</h2>
       <p class="lede">${SIMS[ch.sim]?SIMS[ch.sim].desc:''}</p><div id="simHost"></div>`:''}
-    <h2>Watch</h2>
+    <h2>${t('watch')}</h2>
     <div class="vidlist">${ch.videos.map(vd=>
       `<a target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(vd.q)}">▶ ${vd.t}<span class="spacer"></span><span class="tag">YouTube</span></a>`).join('')}</div>
-    <h2>Check yourself</h2>
+    <h2>${t('checkYourself')}</h2>
+    <div id="recallHost"></div>
     <div id="quizHost"></div>
     <div class="row" style="margin-top:1rem">
-      <button class="btn ghost" id="markBtn">✓ Mark this chapter as read</button>
-      <button class="btn ghost" id="askBtn">🧠 Ask the tutor about this chapter</button>
+      <button class="btn ghost" id="markBtn">${read?t('marked'):t('markRead')}</button>
+      <button class="btn ghost" id="askBtn">${t('askTutor')}</button>
     </div>
     <div class="footer-nav">
-      <div>${prev?`<a href="#/c/${prev.id}">← ${prev.title}</a>`:''}</div>
-      <div>${next?`<a href="#/c/${next.id}">${next.title} →</a>`:''}</div>
+      <div>${prev?`<a href="#/c/${prev.id}">← ${tr(prev,'title')}</a>`:''}</div>
+      <div>${next?`<a href="#/c/${next.id}">${tr(next,'title')} →</a>`:''}</div>
     </div>`;
+  steppedExample(ch, $('#exHost'));
   if(ch.sim) mountSim($('#simHost'), ch.sim);
+  recallBox(ch, $('#recallHost'));
   mountQuiz($('#quizHost'), ch.id);
-  $('#markBtn').onclick = ()=>{ markRead(ch.id); $('#markBtn').textContent='✓ Marked as read'; };
+  $('#markBtn').onclick = ()=>{ markUnderstood(ch.id); $('#markBtn').textContent = t('marked'); };
   $('#askBtn').onclick = ()=>{ openAI(); $('#aiText').focus(); };
-  markRead(ch.id);
-  renderNav($('#searchBox').value);
   setChips();
+}
+
+function viewReview(){
+  CURRENT = null;
+  $('#view').innerHTML = `<div class="crumb">${t('review')}</div>
+    <h1>${LANG.get()==='bn'?'ব্যবধানযুক্ত রিভিশন':'Spaced review'}</h1>
+    <p class="lede">${LANG.get()==='bn'
+      ?'যে অধ্যায়গুলো "বোঝা হয়েছে" চিহ্ন দিয়েছেন, তার সূত্র ও ভুল করা প্রশ্ন এখানে মিশিয়ে আসে। উত্তর দেখার আগে নিজে মনে করার চেষ্টা করুন।'
+      :'Cards from chapters you have marked understood, mixed together on purpose. Try to recall before revealing — the effort is the point.'}</p>
+    <div id="revHost"></div>`;
+  renderReview($('#revHost'));
+}
+
+function viewNotes(){
+  CURRENT = null;
+  const notes = NOTES.all();
+  const rows = ALL_CHAPTERS.filter(c=>notes[c.id] && notes[c.id].trim())
+    .map(c=>`<div class="card"><div class="crumb">${tr(c._unit,'title')}</div>
+      <b><a href="#/c/${c.id}">${tr(c,'title')}</a></b>
+      <p style="white-space:pre-wrap">${notes[c.id].replace(/</g,'&lt;')}</p></div>`).join('');
+  $('#view').innerHTML = `<div class="crumb">${t('notes')}</div><h1>${LANG.get()==='bn'?'আমার নোট':'My notes'}</h1>
+    <p class="lede">${LANG.get()==='bn'
+      ?'প্রতিটি অধ্যায়ের কুইজের আগে নিজের ভাষায় যা লিখেছেন, সব এক জায়গায়। পরীক্ষার আগে এগুলোই সবচেয়ে কাজে দেবে।'
+      :'Everything you wrote in your own words before each quiz, in one place. This is the most useful revision material you own, because you wrote it.'}</p>
+    ${rows || `<div class="card">${LANG.get()==='bn'?'এখনো কোনো নোট নেই। যেকোনো অধ্যায়ের কুইজের ঠিক আগের বাক্সে লিখুন।':'No notes yet. Write one in the recall box just above any chapter quiz.'}</div>`}`;
 }
 
 function viewLab(){
   CURRENT = null;
-  const v = $('#view');
-  v.innerHTML = `<div class="crumb">Simulation lab</div><h1>Every simulation in one place</h1>
-    <p class="lede">${Object.keys(SIMS).length} live simulations. Each one recalculates real physics every frame — nothing is pre-recorded.</p>
+  $('#view').innerHTML = `<div class="crumb">${t('lab')}</div><h1>${LANG.get()==='bn'?'সব সিমুলেশন এক জায়গায়':'Every simulation in one place'}</h1>
+    <p class="lede">${Object.keys(SIMS).length} ${LANG.get()==='bn'?'টি সিমুলেশন, প্রতিটি ফ্রেমে প্রকৃত পদার্থবিজ্ঞান হিসাব করে — কিছুই আগে থেকে রেকর্ড করা নয়।':'live simulations. Each one recomputes real physics every frame — nothing is pre-recorded.'}</p>
     <div class="grid cols-3">${Object.entries(SIMS).map(([k,s])=>
       `<a class="card" href="#/sim/${k}" style="color:inherit"><b>${s.title}</b><p class="lede" style="font-size:.88rem">${s.desc}</p></a>`).join('')}</div>`;
 }
 function viewSim(id){
-  const s = SIMS[id]; if(!s) return viewLab();
+  const s = SIMS[id]; if(!s){ location.hash='#/lab'; return; }
   const owner = ALL_CHAPTERS.find(c=>c.sim===id);
   CURRENT = owner || null;
-  $('#view').innerHTML = `<div class="crumb"><a href="#/lab">Simulation lab</a></div><h1>${s.title}</h1>
+  $('#view').innerHTML = `<div class="crumb"><a href="#/lab">${t('lab')}</a></div><h1>${s.title}</h1>
     <p class="lede">${s.desc}</p><div id="simHost"></div>
-    ${owner?`<p style="margin-top:1rem">Read the theory: <a href="#/c/${owner.id}">${owner.title}</a></p>`:''}`;
+    ${owner?`<p style="margin-top:1rem">→ <a href="#/c/${owner.id}">${tr(owner,'title')}</a></p>`:''}`;
   mountSim($('#simHost'), id);
 }
 
 function viewGames(){
   CURRENT = null;
-  $('#view').innerHTML = `<div class="crumb">Games</div><h1>Practise by playing</h1>
-    <p class="lede">Three games that drill the skills exams actually test: predicting projectile range, recalling formulas at speed, and reading motion graphs.</p>
+  $('#view').innerHTML = `<div class="crumb">${t('games')}</div><h1>${LANG.get()==='bn'?'খেলতে খেলতে অনুশীলন':'Practise by playing'}</h1>
     <div class="grid cols-3">${GAMES.map(g=>`<a class="card" href="#/game/${g.id}" style="color:inherit"><b>${g.title}</b><p class="lede" style="font-size:.88rem">${g.blurb}</p></a>`).join('')}</div>`;
 }
 function viewGame(id){
-  const g = GAMES.find(x=>x.id===id); if(!g) return viewGames();
-  $('#view').innerHTML = `<div class="crumb"><a href="#/games">Games</a></div><h1>${g.title}</h1><p class="lede">${g.blurb}</p><div id="gameHost"></div>`;
+  const g = GAMES.find(x=>x.id===id); if(!g){ location.hash='#/games'; return; }
+  CURRENT = null;
+  $('#view').innerHTML = `<div class="crumb"><a href="#/games">${t('games')}</a></div><h1>${g.title}</h1><p class="lede">${g.blurb}</p><div id="gameHost"></div>`;
   g.mount($('#gameHost'));
 }
 
 function viewFormulas(){
   CURRENT = null;
-  let html = `<div class="crumb">Reference</div><h1>Formula sheet</h1><p class="lede">Every equation in the course, grouped by unit. Use your browser's find (⌘F / Ctrl+F).</p>`;
+  let html = `<div class="crumb">${t('formulas')}</div><h1>${LANG.get()==='bn'?'সূত্র তালিকা':'Formula sheet'}</h1>`;
   PHYSICS.units.forEach(u=>{
-    html += `<h2>${u.icon} ${u.title}</h2>`;
+    html += `<h2>${u.icon} ${tr(u,'title')}</h2>`;
     u.chapters.forEach(c=>{
-      html += `<h3><a href="#/c/${c.id}">${c.title}</a></h3>`;
+      html += `<h3><a href="#/c/${c.id}">${tr(c,'title')}</a></h3>`;
       html += c.formulas.map(f=>`<div class="formula"><b>${f.f}</b>   —   ${f.d}</div>`).join('');
     });
   });
@@ -250,24 +316,35 @@ function viewFormulas(){
 
 function viewProgress(){
   CURRENT = null;
-  const p = store.get();
+  const p = store.get(), srs = SRS.load();
   const rows = ALL_CHAPTERS.map(c=>{
     const r = p[c.id]||{};
     const q = r.quiz ? `${r.quiz.correct}/${r.quiz.total}` : '—';
-    return `<tr><td><a href="#/c/${c.id}">${c.title}</a></td><td>${c._unit.title}</td>
-      <td>${r.read?'✓':'–'}</td><td>${q}</td><td>${chapterDone(c.id)?'<b style="color:var(--good)">done</b>':''}</td></tr>`;
+    const cards = Object.keys(srs).filter(k=>k.includes(':'+c.id+':')).length;
+    return `<tr><td><a href="#/c/${c.id}">${tr(c,'title')}</a></td><td>${tr(c._unit,'title')}</td>
+      <td>${r.read?'✓':'–'}</td><td>${q}</td><td>${cards||'–'}</td><td>${chapterDone(c.id)?'<b style="color:var(--good)">✓</b>':''}</td></tr>`;
   }).join('');
   const done = ALL_CHAPTERS.filter(c=>chapterDone(c.id)).length;
-  $('#view').innerHTML = `<div class="crumb">Progress</div><h1>My progress</h1>
-    <div class="card"><div class="row" style="justify-content:space-between"><b>${done} of ${ALL_CHAPTERS.length} chapters complete</b>
+  const streak = STREAK.get();
+  $('#view').innerHTML = `<div class="crumb">${t('progress')}</div><h1>${t('yourProgress')}</h1>
+    <div class="card"><div class="row" style="justify-content:space-between">
+      <b>${done} / ${ALL_CHAPTERS.length} ${t('chapters')} · 🔥 ${streak.count} ${t('streak')} · 🧠 ${SRS.due().length} ${t('dueToday')}</b>
       <button class="btn ghost small" id="resetProg">Reset all progress</button></div>
       <div class="bar" style="margin-top:.6rem"><i style="width:${done/ALL_CHAPTERS.length*100}%"></i></div></div>
-    <table class="data"><tr><th>Chapter</th><th>Unit</th><th>Read</th><th>Quiz</th><th>Status</th></tr>${rows}</table>`;
-  $('#resetProg').onclick = ()=>{ if(confirm('Erase all progress on this device?')){ localStorage.removeItem('pl_progress'); route(); updateGlobal(); } };
+    <table class="data"><tr><th>${LANG.get()==='bn'?'অধ্যায়':'Chapter'}</th><th>${LANG.get()==='bn'?'ইউনিট':'Unit'}</th>
+      <th>${LANG.get()==='bn'?'পড়া':'Read'}</th><th>${LANG.get()==='bn'?'কুইজ':'Quiz'}</th>
+      <th>${t('flashcards')}</th><th></th></tr>${rows}</table>`;
+  $('#resetProg').onclick = ()=>{
+    if(confirm('Erase all progress, notes and flashcard scheduling on this device?')){
+      ['pl_progress','pl_srs','pl_notes','pl_wrong','pl_streak'].forEach(k=>localStorage.removeItem(k));
+      route(); updateGlobal();
+    }
+  };
 }
 
 /* ---------- router ---------- */
 function route(){
+  simGen++;                                  // kill any running sim loop
   cancelAnimationFrame(simLoop);
   const h = location.hash.replace(/^#\/?/,'');
   const [a,b] = h.split('/');
@@ -278,19 +355,26 @@ function route(){
   else if(a==='games') viewGames();
   else if(a==='formulas') viewFormulas();
   else if(a==='progress') viewProgress();
+  else if(a==='review') viewReview();
+  else if(a==='notes') viewNotes();
   else { CURRENT=null; viewHome(); }
   renderNav($('#searchBox').value);
+  updateGlobal();
   window.scrollTo(0,0);
   $('#sidebar').classList.remove('open'); $('#scrim').classList.remove('on');
 }
 
 /* ---------- AI panel ---------- */
 function openAI(){ $('#aiPanel').classList.add('open'); }
+function closeAI(){ $('#aiPanel').classList.remove('open'); }
 function setChips(){
   const chips = $('#aiChips'); chips.innerHTML='';
+  const bn = LANG.get()==='bn';
   const suggestions = CURRENT
-    ? ['Explain this chapter simply', 'Give me a harder practice problem', 'What mistakes do students make here?', 'How is this used in real life?']
-    : ['Where should I start?', 'Explain what a vector is', 'Give me a study plan for Year 11'];
+    ? (bn ? ['এই অধ্যায়টা সহজ করে বোঝাও','আরেকটা কঠিন অঙ্ক দাও','এখানে শিক্ষার্থীরা কোথায় ভুল করে?','বাস্তবে এর ব্যবহার কী?']
+          : ['Explain this chapter simply','Give me a harder practice problem','What mistakes do students make here?','How is this used in real life?'])
+    : (bn ? ['কোথা থেকে শুরু করব?','ভেক্টর কী?','একাদশ শ্রেণির পড়ার পরিকল্পনা দাও']
+          : ['Where should I start?','Explain what a vector is','Give me a study plan for Year 11']);
   suggestions.forEach(s=>{
     const b = el('button',null,s);
     b.onclick = ()=>{ $('#aiText').value=s; $('#aiForm').dispatchEvent(new Event('submit',{cancelable:true})); };
@@ -304,18 +388,28 @@ function aiMsg(role, text){
 
 /* ---------- boot ---------- */
 function boot(){
-  const saved = localStorage.getItem('pl_theme');
-  if(saved) document.body.dataset.theme = saved;
+  const savedTheme = localStorage.getItem('pl_theme');
+  document.body.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light');
   $('#themeBtn').onclick = ()=>{
     const now = document.body.dataset.theme==='dark' ? 'light':'dark';
     document.body.dataset.theme = now; localStorage.setItem('pl_theme', now);
   };
+  $('#langBtn').textContent = LANG.get()==='en' ? 'বাং' : 'EN';
+  $('#langBtn').onclick = ()=>{
+    LANG.toggle();
+    document.documentElement.lang = LANG.get()==='bn' ? 'bn' : 'en';
+    $('#langBtn').textContent = LANG.get()==='en' ? 'বাং' : 'EN';
+    route(); setChips();
+  };
+  document.documentElement.lang = LANG.get()==='bn' ? 'bn' : 'en';
+
   $('#menuBtn').onclick = ()=>{ $('#sidebar').classList.toggle('open'); $('#scrim').classList.toggle('on'); };
-  $('#scrim').onclick = ()=>{ $('#sidebar').classList.remove('open'); $('#scrim').classList.remove('on'); };
+  $('#scrim').onclick = ()=>{ $('#sidebar').classList.remove('open'); $('#scrim').classList.remove('on'); closeAI(); };
   $('#searchBox').oninput = e => renderNav(e.target.value);
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeAI(); });
 
   $('#aiBtn').onclick = openAI;
-  $('#aiCloseBtn').onclick = ()=> $('#aiPanel').classList.remove('open');
+  $('#aiCloseBtn').onclick = closeAI;
   $('#aiSettingsBtn').onclick = ()=> $('#aiSettings').classList.toggle('hidden');
   $('#aiKey').value = AI.key(); $('#aiModel').value = AI.model();
   $('#aiSaveBtn').onclick = ()=>{
@@ -326,18 +420,17 @@ function boot(){
   };
   $('#aiForm').onsubmit = async e => {
     e.preventDefault();
-    const t = $('#aiText').value.trim(); if(!t) return;
+    const txt = $('#aiText').value.trim(); if(!txt) return;
     $('#aiText').value='';
-    aiMsg('user', t);
+    aiMsg('user', txt);
     const thinking = aiMsg('bot','…');
-    const reply = await AI.ask(t, CURRENT);
-    thinking.textContent = reply;
+    thinking.textContent = await AI.ask(txt, CURRENT);
     $('#aiLog').scrollTop = 1e9;
   };
-  aiMsg('bot', 'Hi. Ask me anything about the chapter you are on. I work with no setup at all — add your own Anthropic API key in ⚙️ for full conversational tutoring.');
+  aiMsg('bot','Hi. Ask me anything about the chapter you are on. I work with no setup at all — add your own Anthropic API key in ⚙️ for full conversational tutoring.');
   setChips();
 
   window.addEventListener('hashchange', route);
-  route(); updateGlobal();
+  route();
 }
 boot();
